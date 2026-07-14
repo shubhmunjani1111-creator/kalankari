@@ -7,7 +7,7 @@ import {
   User, LogOut, Package, Star, Calendar, MapPin, Truck, 
   LayoutDashboard, Plus, Trash2, Edit3, AlertTriangle, 
   TrendingUp, Users, ShoppingBag, ListOrdered, Check, Save, FileText, X, Mail,
-  MessageSquare, Lock, Eye, EyeOff, ShieldCheck, Key
+  MessageSquare, Lock, Eye, EyeOff, ShieldCheck, Key, Phone
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';

@@ -235,7 +235,7 @@ export default function ProductDetail({ params }: { params: any }) {
 
             {/* Thumbnails row */}
             <div className="grid grid-cols-6 gap-2 sm:gap-3">
-              {product.images.map((img, idx) => {
+              {product.images.map((img: string, idx: number) => {
                 const thumbnailSrc = imgError[idx] ? "/logo.jpg" : img;
                 return (
                   <button
@@ -263,7 +263,7 @@ export default function ProductDetail({ params }: { params: any }) {
               
               <div className="flex items-center gap-3 mt-3">
                 <div className="flex text-secondary items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(5)].map((_, i: number) => (
                     <Star 
                       key={i} 
                       size={14} 
@@ -310,7 +310,7 @@ export default function ProductDetail({ params }: { params: any }) {
                 </span>
               </div>
               <div className="flex gap-2">
-                {product.size.map(sz => (
+                {product.size.map((sz: string) => (
                   <button
                     key={sz}
                     onClick={() => setSelectedSize(sz)}
@@ -429,7 +429,7 @@ export default function ProductDetail({ params }: { params: any }) {
                                 <span className="text-[10px] text-gray-400">{new Date(rev.createdAt).toLocaleDateString('en-IN')}</span>
                               </div>
                               <div className="flex text-secondary items-center gap-0.5">
-                                {[...Array(5)].map((_, i) => (
+                                {[...Array(5)].map((_, i: number) => (
                                   <Star 
                                     key={i} 
                                     size={10} 
@@ -465,7 +465,7 @@ export default function ProductDetail({ params }: { params: any }) {
                           <div className="flex flex-col gap-1.5">
                             <span className="font-semibold text-gray-400 text-[10px] uppercase">Your Rating</span>
                             <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
+                              {[1, 2, 3, 4, 5].map((star: number) => (
                                 <button
                                   key={star}
                                   type="button"
@@ -522,7 +522,7 @@ export default function ProductDetail({ params }: { params: any }) {
           <div className="mt-20 pt-10 border-t border-gray-150 dark:border-zinc-900 w-full text-left">
             <h3 className="font-headings text-2xl font-bold mb-8 text-gray-800 dark:text-white">You May Also Like</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {relatedProducts.map((p) => (
+              {relatedProducts.map((p: any) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

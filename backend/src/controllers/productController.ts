@@ -4,6 +4,7 @@ import Order from '../models/Order';
 import Review from '../models/Review';
 import Notification from '../models/Notification';
 import { AuthRequest } from '../middleware/auth';
+import User from '../models/User';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -123,10 +124,13 @@ export const submitReview = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Only customers who purchased and received the product can leave feedback.' });
     }
 
+    const userObj = await User.findById(req.user.id);
+    const authorName = userObj ? userObj.name : 'Verified Customer';
+
     const review = new Review({
       product: productId,
       user: req.user.id,
-      author: req.user.name || 'Verified Customer',
+      author: authorName,
       rating,
       title,
       desc,
@@ -229,17 +233,20 @@ export const addProductReview = async (req: any, res: Response) => {
       return res.status(404).json({ error: 'Product not found.' });
     }
 
+    const user = await User.findById(req.user.id);
+    const authorName = user ? user.name : 'Verified Customer';
+
     // Add review to array
     const newReview = {
       userId: req.user.id,
-      userName: req.user.name || 'Verified Customer',
+      userName: authorName,
       rating: Number(rating),
       comment: comment.trim(),
       createdAt: new Date()
     };
 
     if (!product.reviews) {
-      product.reviews = [];
+      product.reviews = [] as any;
     }
 
     product.reviews.push(newReview as any);

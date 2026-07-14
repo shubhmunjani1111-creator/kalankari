@@ -101,7 +101,7 @@ export const getOrderById = async (req: AuthRequest, res: Response) => {
     if (!isOwner && !isAdmin) {
       // Query parameters lookup fallback (validation checks)
       const { mobile } = req.query;
-      if (!mobile || order.shippingAddress.phone !== mobile) {
+      if (!mobile || order.shippingAddress!.phone !== mobile) {
         return res.status(403).json({ error: 'Access denied: Invalid Order ID or Mobile Number.' });
       }
     }
@@ -206,7 +206,7 @@ export const generateGSTInvoice = async (req: AuthRequest, res: Response) => {
     const isAdmin = req.user && req.user.role === 'admin';
     if (!isOwner && !isAdmin) {
       const { mobile } = req.query;
-      if (!mobile || order.shippingAddress.phone !== mobile) {
+      if (!mobile || order.shippingAddress!.phone !== mobile) {
         return res.status(403).json({ error: 'Access denied' });
       }
     }
@@ -273,14 +273,14 @@ export const generateGSTInvoice = async (req: AuthRequest, res: Response) => {
           <div class="billing-shipping">
             <div>
               <h4>Billed To</h4>
-              <strong>${order.shippingAddress.name}</strong><br>
-              Phone: ${order.shippingAddress.phone}<br>
-              Email: ${order.shippingAddress.email}
+              <strong>${order.shippingAddress!.name}</strong><br>
+              Phone: ${order.shippingAddress!.phone}<br>
+              Email: ${order.shippingAddress!.email}
             </div>
             <div>
               <h4>Shipped To</h4>
-              ${order.shippingAddress.street}<br>
-              ${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.pin}<br>
+              ${order.shippingAddress!.street}<br>
+              ${order.shippingAddress!.city}, ${order.shippingAddress!.state} - ${order.shippingAddress!.pin}<br>
               India
             </div>
           </div>

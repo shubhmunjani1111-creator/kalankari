@@ -1,0 +1,29 @@
+# Next.js Frontend Gitignore
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js build assets
+/.next/
+/out/
+
+# production output
+/build
+
+# misc OS files
+.DS_Store
+*.pem
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env

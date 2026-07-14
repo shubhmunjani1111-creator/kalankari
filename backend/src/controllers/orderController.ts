@@ -124,6 +124,11 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
     if (courierName) order.courierName = courierName;
     if (trackingNumber) order.trackingNumber = trackingNumber;
 
+    // For COD orders, if status is updated to Delivered, mark paymentStatus as Completed
+    if (order.paymentMethod === 'cod' && status === 'Delivered') {
+      order.paymentStatus = 'Completed';
+    }
+
     // Update tracking timeline step
     const dateStr = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
     const stepIdx = order.timeline.findIndex(s => s.label === status);
@@ -432,6 +437,19 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       customersCount,
       salesGraphData
     });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// V2.2: Delete order (Admin only)
+export const deleteOrderAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json({ message: 'Order deleted successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

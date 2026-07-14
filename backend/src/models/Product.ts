@@ -18,6 +18,7 @@ const ProductSchema = new Schema({
   collectionType: { type: String, required: true, index: true }, // Floral, Festive, Premium
   isBestSeller: { type: Boolean, default: false },
   isNewArrival: { type: Boolean, default: true },
+  isFeatured: { type: Boolean, default: false },
   description: { type: String, required: true },
   careInstructions: { type: String, default: 'Dry clean only. Gentle machine wash inside out.' },
   stockCount: { type: Number, default: 50 },

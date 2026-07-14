@@ -19,7 +19,7 @@ import {
 } from './controllers/authController';
 import { submitContactMessage, getMessagesAdmin, replyToMessageAdmin, deleteMessageAdmin, markMessageReadAdmin } from './controllers/messageController';
 import { getProducts, getProductById, createProduct, deleteProduct, adjustStock, getSearchSuggestions, updateProduct, addProductReview } from './controllers/productController';
-import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrdersAdmin, generateGSTInvoice, retryOrderPayment, getAdminStats } from './controllers/orderController';
+import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrdersAdmin, generateGSTInvoice, retryOrderPayment, getAdminStats, deleteOrderAdmin } from './controllers/orderController';
 import { createRazorpayOrder, verifyRazorpayPayment, razorpayWebhook } from './controllers/paymentController';
 import { authenticateToken, requireAdmin, optionalAuthenticate } from './middleware/auth';
 import { rateLimiter, helmetSecurityHeaders, inputSanitizer } from './middleware/security';
@@ -87,6 +87,7 @@ app.post('/api/orders/:id/retry-payment', authenticateToken, retryOrderPayment);
 app.get('/api/orders/:id', optionalAuthenticate, getOrderById);
 app.patch('/api/orders/:id/status', authenticateToken, requireAdmin, updateOrderStatus);
 app.get('/api/admin/orders', authenticateToken, requireAdmin, getAllOrdersAdmin);
+app.delete('/api/admin/orders/:id', authenticateToken, requireAdmin, deleteOrderAdmin);
 app.get('/api/admin/stats', authenticateToken, requireAdmin, getAdminStats);
 
 // Payments Routes

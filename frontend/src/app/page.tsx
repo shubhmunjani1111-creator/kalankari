@@ -17,28 +17,37 @@ export default function Home() {
     { name: "Ananya Rao", loc: "Bangalore", review: "The prints are incredibly vivid, exactly like the photos! Cotton quality is exceptional, very breathable. It didn't fade at all after 3 machine washes.", rating: 5 }
   ];
 
-  const heroSlides = [
-    {
-      id: "65ca1d20f91a034dd2674001",
-      name: "Mayur Peacock Kurti",
-      tag: "Festive Silk",
-      img: "/products/file_00000000046c720795da034dd2674be1.png"
-    },
-    {
-      id: "65ca1d20f91a034dd2674002",
-      name: "Aanya Mughal Motif Kurti",
-      tag: "Mughal Motif",
-      img: "/products/file_0000000013f07206809b90484b6de3a1 (1).png"
-    },
-    {
-      id: "65ca1d20f91a034dd2674005",
-      name: "Meera Silk Border Kurti",
-      tag: "Premium Silk",
-      img: "/products/file_0000000092fc7206a8df183f957bfac9.png"
-    }
-  ];
-
   const [dbProducts, setDbProducts] = useState<any[]>([]);
+
+  // Dynamically load hero slides from database featured products
+  const featuredDbProducts = dbProducts.filter(p => p.isFeatured);
+  const heroSlides = featuredDbProducts.length > 0
+    ? featuredDbProducts.slice(0, 5).map(p => ({
+        id: p._id,
+        name: p.name,
+        tag: p.collectionType || 'Premium',
+        img: p.images && p.images[0] ? p.images[0] : "/logo.jpg"
+      }))
+    : [
+        {
+          id: "65ca1d20f91a034dd2674001",
+          name: "Mayur Peacock Kurti",
+          tag: "Festive Silk",
+          img: "/products/file_00000000046c720795da034dd2674be1.png"
+        },
+        {
+          id: "65ca1d20f91a034dd2674002",
+          name: "Aanya Mughal Motif Kurti",
+          tag: "Mughal Motif",
+          img: "/products/file_0000000013f07206809b90484b6de3a1 (1).png"
+        },
+        {
+          id: "65ca1d20f91a034dd2674005",
+          name: "Meera Silk Border Kurti",
+          tag: "Premium Silk",
+          img: "/products/file_0000000092fc7206a8df183f957bfac9.png"
+        }
+      ];
 
   useEffect(() => {
     const fetchProducts = async () => {

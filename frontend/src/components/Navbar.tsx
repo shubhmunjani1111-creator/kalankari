@@ -225,7 +225,7 @@ export const Navbar: React.FC = () => {
             <button onClick={() => setWishlistOpen(true)} className="hover:text-primary dark:hover:text-secondary transition-colors relative p-1" title="Wishlist">
               <Heart size={20} />
               {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                   {wishlist.length}
                 </span>
               )}
@@ -235,7 +235,7 @@ export const Navbar: React.FC = () => {
             <button onClick={() => setCartOpen(true)} className="hover:text-primary dark:hover:text-secondary transition-colors relative p-1" title="Cart">
               <ShoppingBag size={20} />
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-primary text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1.5 bg-primary text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                   {cartItemsCount}
                 </span>
               )}

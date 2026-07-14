@@ -17,12 +17,10 @@ export default function Dashboard() {
   const router = useRouter();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'orders' | 'profile' | 'emails' | 'support'>('profile');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'orders' | 'profile' | 'support'>('profile');
 
   // Email Logs States
-  const [emailLogs, setEmailLogs] = useState<any[]>([]);
-  const [loadingEmails, setLoadingEmails] = useState(false);
-  const [retryingLogId, setRetryingLogId] = useState<string | null>(null);
+
 
   // Customer Dashboard States
   const [myOrders, setMyOrders] = useState<any[]>([]);
@@ -38,6 +36,7 @@ export default function Dashboard() {
 
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [filterFeatured, setFilterFeatured] = useState<'all' | 'featured'>('all');
 
   // Modals & UI States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -62,7 +61,8 @@ export default function Dashboard() {
     collectionType: 'Festive',
     stockCount: 50,
     size: [] as string[],
-    images: [] as string[]
+    images: [] as string[],
+    isFeatured: false
   });
 
   const [imageInput, setImageInput] = useState('');
@@ -206,8 +206,7 @@ export default function Dashboard() {
       fetchAdminOrders();
     } else if (activeTab === 'catalog' || activeTab === 'stocks') {
       fetchCatalogProducts();
-    } else if (activeTab === 'emails') {
-      fetchEmailLogs();
+
     } else if (activeTab === 'support') {
       fetchSupportMessages();
     }
@@ -504,43 +503,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchEmailLogs = async () => {
-    setLoadingEmails(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/email-logs`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setEmailLogs(data);
-      }
-    } catch (err) {
-      console.error("Fetch email logs failed:", err);
-    } finally {
-      setLoadingEmails(false);
-    }
-  };
 
-  const handleRetryEmail = async (id: string) => {
-    setRetryingLogId(id);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/email-logs/${id}/retry`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        showNotification("Email retry process triggered successfully!");
-        await fetchEmailLogs();
-      } else {
-        alert("Failed to trigger email retry.");
-      }
-    } catch (err) {
-      console.error("Retry email failed:", err);
-      alert("Network error.");
-    } finally {
-      setRetryingLogId(null);
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -602,11 +565,33 @@ export default function Dashboard() {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
-        setAdminOrders(prev => prev.map(o => o._id === id ? { ...o, status: newStatus } : o));
+        const updatedOrder = await res.json();
+        setAdminOrders(prev => prev.map(o => o._id === id ? updatedOrder : o));
         showNotification("Order status updated!");
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Delete order
+  const handleDeleteOrder = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this order?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/orders/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setAdminOrders(prev => prev.filter(o => o._id !== id));
+        showNotification("Order deleted successfully.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete order.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error.");
     }
   };
 
@@ -625,7 +610,8 @@ export default function Dashboard() {
       collectionType: 'Premium',
       stockCount: 50,
       size: ['M', 'L', 'XL'],
-      images: []
+      images: [],
+      isFeatured: filterFeatured === 'featured'
     });
     setImagesList(['/products/file_00000000046c720795da034dd2674be1.png']);
     setImageInput('');
@@ -647,7 +633,8 @@ export default function Dashboard() {
       collectionType: p.collectionType,
       stockCount: p.stockCount,
       size: p.size || [],
-      images: p.images || []
+      images: p.images || [],
+      isFeatured: !!p.isFeatured
     });
     setImagesList(p.images || []);
     setImageInput('');
@@ -780,12 +767,7 @@ export default function Dashboard() {
           >
             <User size={14} /> Customer View
           </button>
-          <button 
-            onClick={() => setActiveTab('emails')}
-            className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'emails' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
-          >
-            <Mail size={14} /> Email Dispatch Logs
-          </button>
+
           <button 
             onClick={() => setActiveTab('support')}
             className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'support' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
@@ -909,8 +891,26 @@ export default function Dashboard() {
       {isAdmin && activeTab === 'catalog' && (
         <div className="flex flex-col gap-6 w-full">
           
-          <div className="flex justify-between items-center">
-            <h3 className="font-headings text-lg font-bold text-gray-800 dark:text-white">Active Designs</h3>
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex items-center gap-6">
+              <h3 className="font-headings text-lg font-bold text-gray-800 dark:text-white">Active Designs</h3>
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-900 p-0.5 rounded-lg text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setFilterFeatured('all')}
+                  className={`px-3 py-1.5 rounded-md font-bold uppercase transition-all ${filterFeatured === 'all' ? 'bg-white dark:bg-zinc-950 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-650'}`}
+                >
+                  All Products
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterFeatured('featured')}
+                  className={`px-3 py-1.5 rounded-md font-bold uppercase transition-all ${filterFeatured === 'featured' ? 'bg-white dark:bg-zinc-950 text-yellow-600 dark:text-yellow-450 shadow-sm' : 'text-gray-400 hover:text-gray-650'}`}
+                >
+                  ★ Homepage Slideshow
+                </button>
+              </div>
+            </div>
             <button 
               onClick={openAddModal}
               className="bg-primary hover:bg-primary-hover text-white py-2.5 px-4 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
@@ -923,16 +923,37 @@ export default function Dashboard() {
             <div className="py-20 text-center text-xs text-gray-400">Loading catalog kurtis...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((p) => (
-                <div key={p._id} className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm overflow-hidden flex flex-col justify-between">
-                  <div className="relative h-64 w-full bg-gray-50 flex-shrink-0">
-                    <img src={p.images && p.images[0] ? p.images[0] : '/logo.jpg'} alt={p.name} className="w-full h-full object-cover" />
-                    <span className="absolute top-2.5 right-2.5 bg-black/60 text-white font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">
-                      {p.collectionType}
-                    </span>
-                  </div>
-                  <div className="p-4 flex-grow flex flex-col justify-between gap-4 text-xs">
-                    <div>
+              {products
+                .filter(p => {
+                  const isProductFeatured = p.isFeatured || (p.name === "Meera Silk Border Kurti" || p.name === "Mayur Peacock Premium Kurti" || p.name === "Aanya Mughal Motif Kurti");
+                  return filterFeatured === 'all' ? true : isProductFeatured;
+                })
+                .map((p) => {
+                  const isProductFeatured = p.isFeatured || (p.name === "Meera Silk Border Kurti" || p.name === "Mayur Peacock Premium Kurti" || p.name === "Aanya Mughal Motif Kurti");
+                  return (
+                    <div key={p._id} className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm overflow-hidden flex flex-col justify-between">
+                      <div className="relative h-64 w-full bg-gray-50 flex-shrink-0">
+                        <img src={p.images && p.images[0] ? p.images[0] : '/logo.jpg'} alt={p.name} className="w-full h-full object-cover" />
+                        {isProductFeatured && (
+                          <span className="absolute top-2.5 left-2.5 bg-yellow-500 text-white font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-0.5 shadow-md">
+                            ★ Homepage Slideshow
+                          </span>
+                        )}
+                        <span className="absolute top-2.5 right-2.5 bg-black/60 text-white font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">
+                          {p.collectionType}
+                        </span>
+                      </div>
+                      <div className="p-4 flex-grow flex flex-col justify-between gap-4 text-xs">
+                        <div>
+                          {isProductFeatured ? (
+                            <span className="text-[9px] text-yellow-600 dark:text-yellow-450 font-bold bg-yellow-50 dark:bg-yellow-950/20 px-2.5 py-1 rounded inline-block mb-2 shadow-sm border border-yellow-100 dark:border-yellow-950/10">
+                              ★ Featured on Hero Slider
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-gray-400 font-medium bg-gray-50 dark:bg-zinc-900 px-2.5 py-1 rounded inline-block mb-2 border border-gray-100 dark:border-zinc-850">
+                              Regular Product
+                            </span>
+                          )}
                       <h4 className="font-headings text-base font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">{p.name}</h4>
                       <p className="text-[10px] text-gray-400 font-semibold mb-2">{p.category} | {p.fabric}</p>
                       <p className="text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{p.description}</p>
@@ -956,11 +977,12 @@ export default function Dashboard() {
                         >
                           <Trash2 size={14} />
                         </button>
-                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            );
+          })}
             </div>
           )}
 
@@ -1083,13 +1105,14 @@ export default function Dashboard() {
                     <th className="pb-3">Billing</th>
                     <th className="pb-3">Payment</th>
                     <th className="pb-3">Pipeline Status</th>
+                    <th className="pb-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {adminOrders.map((o) => (
                     <tr key={o._id} className="border-b border-gray-100 dark:border-zinc-900/50 hover:bg-gray-50/50 dark:hover:bg-zinc-900/20">
                       <td className="py-4">
-                        <span className="font-bold text-gray-800 dark:text-white block">#{o._id.substring(16).toUpperCase()}</span>
+                        <span className="font-bold text-gray-800 dark:text-white block">#{o._id}</span>
                         <span className="text-[10px] text-gray-400 block mt-0.5">{new Date(o.createdAt).toLocaleDateString('en-IN')}</span>
                       </td>
                       <td className="py-4">
@@ -1125,6 +1148,15 @@ export default function Dashboard() {
                           <option value="Cancelled">Cancelled</option>
                         </select>
                       </td>
+                      <td className="py-4 text-right">
+                        <button 
+                          onClick={() => handleDeleteOrder(o._id)}
+                          className="p-1.5 border border-red-100 hover:bg-red-50 dark:border-red-950/20 dark:hover:bg-red-950/20 rounded text-red-600 transition-colors"
+                          title="Delete Order"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1132,183 +1164,6 @@ export default function Dashboard() {
             </div>
           )}
 
-        </div>
-      )}
-
-      {/* TAB 4.5: EMAIL LOGS */}
-      {isAdmin && activeTab === 'emails' && (
-        <div className="flex flex-col gap-6 w-full text-left">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 dark:border-zinc-900 pb-5">
-            <div>
-              <h2 className="font-headings text-2xl font-bold text-gray-800 dark:text-white">Email Notification Suite</h2>
-              <p className="text-xs text-gray-400 mt-1">Monitor real-time dispatch logs, check provider responses, or trigger immediate manual retries.</p>
-            </div>
-            <button 
-              onClick={fetchEmailLogs}
-              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded transition-colors"
-            >
-              Refresh Logs
-            </button>
-          </div>
-
-          {/* Test Panel Card */}
-          <div className="bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-4">📧 Instant Notification Test Suite</h3>
-            <p className="text-xs text-gray-400 mb-4">Trigger ready-made dynamic mock HTML notifications instantly to see how they look or to check your API configuration.</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/welcome`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Welcome Email dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Welcome Email
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/reset`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Reset Password email dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Password Reset
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/admin-order`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Admin Alert Email dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Admin Order Notification
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/customer-order`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Customer Confirmation dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Customer Order Confirmation
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/shipped`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Order Shipped email dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Order Shipped
-              </button>
-              <button 
-                type="button"
-                onClick={async () => {
-                  const res = await fetch(`${API_BASE_URL}/api/admin/email-test/delivered`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) { showNotification("Test Order Delivered email dispatched!"); fetchEmailLogs(); }
-                }}
-                className="border border-gray-250 dark:border-zinc-800 hover:border-primary px-3 py-2.5 rounded text-center text-xs font-bold transition-all text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Order Delivered
-              </button>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-[#121111] p-5 border border-gray-150 dark:border-zinc-900 rounded-lg text-left shadow-sm">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Sent</span>
-              <h4 className="text-xl font-bold text-green-600 dark:text-green-400 mt-1">{emailLogs.filter(l => l.status === 'sent').length}</h4>
-            </div>
-            <div className="bg-white dark:bg-[#121111] p-5 border border-gray-150 dark:border-zinc-900 rounded-lg text-left shadow-sm">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Retries Pending</span>
-              <h4 className="text-xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{emailLogs.filter(l => l.status === 'pending').length}</h4>
-            </div>
-            <div className="bg-white dark:bg-[#121111] p-5 border border-gray-150 dark:border-zinc-900 rounded-lg text-left shadow-sm">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Failed Delivery</span>
-              <h4 className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">{emailLogs.filter(l => l.status === 'failed').length}</h4>
-            </div>
-          </div>
-
-          {/* Logs Table */}
-          {loadingEmails ? (
-            <div className="py-12 text-center text-xs text-gray-400">
-              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-primary mx-auto mb-2"></div>
-              <span>Retrieving email dispatch logs...</span>
-            </div>
-          ) : emailLogs.length === 0 ? (
-            <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg p-10 text-center text-xs text-gray-400">
-              No email notifications have been triggered yet.
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-zinc-900 text-gray-450 border-b border-gray-150 dark:border-zinc-850">
-                      <th className="py-3.5 px-4 font-bold text-left uppercase tracking-wider">Recipient</th>
-                      <th className="py-3.5 px-4 font-bold text-left uppercase tracking-wider">Subject & Type</th>
-                      <th className="py-3.5 px-4 font-bold text-left uppercase tracking-wider">Provider & Method</th>
-                      <th className="py-3.5 px-4 font-bold text-left uppercase tracking-wider">Status</th>
-                      <th className="py-3.5 px-4 font-bold text-left uppercase tracking-wider">Timestamp</th>
-                      <th className="py-3.5 px-4 font-bold text-center uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-900">
-                    {emailLogs.map((log: any) => (
-                      <tr key={log._id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30">
-                        <td className="py-3.5 px-4 font-semibold text-gray-800 dark:text-gray-200">
-                          {log.recipient}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-gray-700 dark:text-gray-300">{log.subject}</span>
-                          <div className="text-[10px] text-gray-400 capitalize mt-0.5">Type: {log.type.replace('_', ' ')}</div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-semibold text-gray-500 uppercase">{log.provider}</span>
-                          {log.attempts > 1 && (
-                            <div className="text-[9px] text-yellow-600 font-bold mt-0.5">Attempts: {log.attempts}</div>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                            log.status === 'sent' ? 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400' :
-                            log.status === 'failed' ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' :
-                            'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/20 dark:text-yellow-400'
-                          }`}>
-                            {log.status}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-gray-500">
-                          {new Date(log.createdAt).toLocaleString('en-IN')}
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          {(log.status === 'failed' || log.status === 'pending') && (
-                            <button
-                              type="button"
-                              onClick={() => handleRetryEmail(log._id)}
-                              disabled={retryingLogId === log._id}
-                              className="bg-secondary hover:bg-secondary-dark text-white px-3 py-1.5 rounded text-[10px] font-bold transition-colors disabled:bg-zinc-300"
-                            >
-                              {retryingLogId === log._id ? 'Retrying...' : 'Retry Dispatch'}
-                            </button>
-                          )}
-                          {log.status === 'sent' && (
-                            <span className="text-gray-400 italic">No action</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1658,7 +1513,7 @@ export default function Dashboard() {
                     <div key={o._id} className="border border-gray-100 dark:border-zinc-900 rounded-lg p-5 flex flex-col gap-4 text-xs relative">
                       <div className="flex flex-wrap justify-between items-center border-b pb-3 border-gray-50 dark:border-zinc-900/50 gap-2">
                         <div>
-                          <span className="font-bold text-gray-800 dark:text-white">Order Reference: #{o._id.substring(16).toUpperCase()}</span>
+                          <span className="font-bold text-gray-800 dark:text-white">Order Reference: #{o._id}</span>
                           <span className="text-[10px] text-gray-400 block mt-0.5">Date: {new Date(o.createdAt).toLocaleDateString('en-IN')}</span>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1881,6 +1736,19 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 py-1.5">
+                <input 
+                  type="checkbox" 
+                  id="isFeaturedAdd" 
+                  checked={productForm.isFeatured} 
+                  onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                  className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                />
+                <label htmlFor="isFeaturedAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                  Featured Product (Show on Homepage)
+                </label>
               </div>
 
               <div className="flex flex-col gap-2.5">
@@ -2111,6 +1979,19 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 py-1.5">
+                <input 
+                  type="checkbox" 
+                  id="isFeaturedEdit" 
+                  checked={productForm.isFeatured} 
+                  onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                  className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                />
+                <label htmlFor="isFeaturedEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                  Featured Product (Show on Homepage)
+                </label>
               </div>
 
               <div className="flex flex-col gap-2.5">

@@ -6,6 +6,22 @@ import { Search, SlidersHorizontal } from 'lucide-react';
 import { ProductCard } from '@/components/ProductCard';
 import { API_BASE_URL } from '@/config';
 
+const getNormalizedCollection = (product: any): string => {
+  const cat = (product.category || "").toLowerCase().trim();
+  const coll = (product.collectionType || "").toLowerCase().trim();
+  
+  if (cat.includes("floral") || coll.includes("floral")) {
+    return "Floral Collection";
+  }
+  if (cat.includes("festive") || coll.includes("festive") || cat.includes("festival") || coll.includes("festival")) {
+    return "Festive Collection";
+  }
+  if (cat.includes("premium") || coll.includes("premium")) {
+    return "Premium Collection";
+  }
+  return product.category || "Other";
+};
+
 function ShopContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -47,8 +63,11 @@ function ShopContent() {
     fetchProducts();
   }, []);
 
-  // Extract unique categories dynamically from dbProducts (filtered to remove empty/undefined values)
-  const categories = Array.from(new Set(dbProducts.map(p => p.category).filter(Boolean)));
+  const categories = [
+    "Floral Collection",
+    "Festive Collection",
+    "Premium Collection"
+  ];
 
   // Filter products logic
   useEffect(() => {
@@ -60,12 +79,13 @@ function ShopContent() {
         (p.name || '').toLowerCase().includes(term) || 
         (p.fabric || '').toLowerCase().includes(term) ||
         (p.color || '').toLowerCase().includes(term) ||
-        (p.category || '').toLowerCase().includes(term)
+        (p.category || '').toLowerCase().includes(term) ||
+        (p._id || p.id || '').toLowerCase().includes(term)
       );
     }
 
     if (selectedCategory) {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+      filtered = filtered.filter(p => getNormalizedCollection(p) === selectedCategory);
     }
 
     filtered = filtered.filter(p => p.price <= maxPrice);

@@ -201,7 +201,7 @@ export default function Contact() {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Email Inquiry</span>
-                <a href="mailto:kalankari8972@gmail.com" className="font-semibold text-gray-800 dark:text-gray-200 hover:underline">kalankari8972@gmail.com</a>
+                <a href="mailto:support@kalankari.com" className="font-semibold text-gray-800 dark:text-gray-200 hover:underline">support@kalankari.com</a>
               </div>
             </div>
           </div>

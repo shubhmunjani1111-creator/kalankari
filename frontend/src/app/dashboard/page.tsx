@@ -62,7 +62,10 @@ export default function Dashboard() {
     stockCount: 50,
     size: [] as string[],
     images: [] as string[],
-    isFeatured: false
+    isFeatured: false,
+    isBestSeller: false,
+    isNewArrival: true,
+    isFeaturedProduct: false
   });
 
   const [imageInput, setImageInput] = useState('');
@@ -595,6 +598,7 @@ export default function Dashboard() {
     }
   };
 
+
   // Open modals helper
   const openAddModal = () => {
     setProductForm({
@@ -611,7 +615,10 @@ export default function Dashboard() {
       stockCount: 50,
       size: ['M', 'L', 'XL'],
       images: [],
-      isFeatured: filterFeatured === 'featured'
+      isFeatured: filterFeatured === 'featured',
+      isBestSeller: false,
+      isNewArrival: true,
+      isFeaturedProduct: false
     });
     setImagesList(['/products/file_00000000046c720795da034dd2674be1.png']);
     setImageInput('');
@@ -634,7 +641,10 @@ export default function Dashboard() {
       stockCount: p.stockCount,
       size: p.size || [],
       images: p.images || [],
-      isFeatured: !!p.isFeatured
+      isFeatured: !!p.isFeatured,
+      isBestSeller: !!p.isBestSeller,
+      isNewArrival: !!p.isNewArrival,
+      isFeaturedProduct: !!p.isFeaturedProduct
     });
     setImagesList(p.images || []);
     setImageInput('');
@@ -1644,9 +1654,9 @@ export default function Dashboard() {
                     onChange={(e) => setProductForm(prev => ({ ...prev, category: e.target.value }))}
                     className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs"
                   >
-                    <option value="Kurtis">Kurtis</option>
-                    <option value="Kurtas">Kurtas</option>
-                    <option value="Sets">Sets</option>
+                    <option value="Floral Collection">Floral Collection</option>
+                    <option value="Festive Collection">Festive Collection</option>
+                    <option value="Premium Collection">Premium Collection</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -1738,17 +1748,55 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 py-1.5">
-                <input 
-                  type="checkbox" 
-                  id="isFeaturedAdd" 
-                  checked={productForm.isFeatured} 
-                  onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                  className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
-                />
-                <label htmlFor="isFeaturedAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
-                  Featured Product (Show on Homepage)
-                </label>
+              <div className="flex flex-wrap gap-5 py-2 border-t border-b border-gray-100 dark:border-zinc-900/50 my-1">
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isFeaturedAdd" 
+                    checked={productForm.isFeatured} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isFeaturedAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Homepage Slideshow
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isBestSellerAdd" 
+                    checked={productForm.isBestSeller} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isBestSeller: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isBestSellerAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Best Seller
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isNewArrivalAdd" 
+                    checked={productForm.isNewArrival} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isNewArrival: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isNewArrivalAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    New Arrival
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isFeaturedProductAdd" 
+                    checked={productForm.isFeaturedProduct} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isFeaturedProduct: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isFeaturedProductAdd" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Featured Product
+                  </label>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2.5">
@@ -1887,9 +1935,9 @@ export default function Dashboard() {
                     onChange={(e) => setProductForm(prev => ({ ...prev, category: e.target.value }))}
                     className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs"
                   >
-                    <option value="Kurtis">Kurtis</option>
-                    <option value="Kurtas">Kurtas</option>
-                    <option value="Sets">Sets</option>
+                    <option value="Floral Collection">Floral Collection</option>
+                    <option value="Festive Collection">Festive Collection</option>
+                    <option value="Premium Collection">Premium Collection</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -1981,17 +2029,55 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 py-1.5">
-                <input 
-                  type="checkbox" 
-                  id="isFeaturedEdit" 
-                  checked={productForm.isFeatured} 
-                  onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                  className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
-                />
-                <label htmlFor="isFeaturedEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
-                  Featured Product (Show on Homepage)
-                </label>
+              <div className="flex flex-wrap gap-5 py-2 border-t border-b border-gray-100 dark:border-zinc-900/50 my-1">
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isFeaturedEdit" 
+                    checked={productForm.isFeatured} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isFeaturedEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Homepage Slideshow
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isBestSellerEdit" 
+                    checked={productForm.isBestSeller} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isBestSeller: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isBestSellerEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Best Seller
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isNewArrivalEdit" 
+                    checked={productForm.isNewArrival} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isNewArrival: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isNewArrivalEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    New Arrival
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="isFeaturedProductEdit" 
+                    checked={productForm.isFeaturedProduct} 
+                    onChange={(e) => setProductForm(prev => ({ ...prev, isFeaturedProduct: e.target.checked }))}
+                    className="rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                  />
+                  <label htmlFor="isFeaturedProductEdit" className="font-bold text-[10px] text-gray-750 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none">
+                    Featured Product
+                  </label>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2.5">

@@ -27,7 +27,7 @@ function AuthContent() {
 
   // Forgot Password modal states
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotStep, setForgotStep] = useState<'email' | 'otp'>('email');
+  const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'password'>('email');
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOTP, setForgotOTP] = useState("");
   const [forgotPassword, setForgotPassword] = useState("");
@@ -162,8 +162,8 @@ function AuthContent() {
     }
   };
 
-  // Verify OTP and reset password
-  const handleForgotReset = async (e: React.FormEvent) => {
+  // Verify OTP only
+  const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotError(null);
     setForgotSuccess(null);
@@ -172,18 +172,9 @@ function AuthContent() {
       setForgotError("Please enter the 6-digit OTP code.");
       return;
     }
-    if (forgotPassword.length < 6) {
-      setForgotError("Password must be at least 6 characters long.");
-      return;
-    }
-    if (forgotPassword !== forgotConfirm) {
-      setForgotError("Passwords do not match.");
-      return;
-    }
 
     setForgotLoading(true);
     try {
-      // First verify the OTP
       const verifyRes = await fetch(`${API_BASE_URL}/api/auth/forgot-password-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +186,32 @@ function AuthContent() {
         throw new Error(verifyData.error || "Invalid OTP code.");
       }
 
-      // Then trigger reset
+      setForgotSuccess("OTP verified successfully! Please choose a new password.");
+      setForgotStep('password');
+    } catch (err: any) {
+      setForgotError(err.message || "An error occurred.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Reset password after successful verification
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    if (forgotPassword.length < 6) {
+      setForgotError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (forgotPassword !== forgotConfirm) {
+      setForgotError("Passwords do not match.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
       const resetRes = await fetch(`${API_BASE_URL}/api/auth/forgot-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,9 +233,16 @@ function AuthContent() {
         setActiveTab('login');
         setLoginData({ email: forgotEmail, password: '' });
         setErrorMsg("Password updated successfully! Please log in.");
+        
+        // Reset modal state
+        setForgotEmail("");
+        setForgotOTP("");
+        setForgotPassword("");
+        setForgotConfirm("");
+        setForgotStep('email');
       }, 2000);
     } catch (err: any) {
-      setForgotError(err.message || "Reset failed.");
+      setForgotError(err.message || "An error occurred.");
     } finally {
       setForgotLoading(false);
     }
@@ -463,8 +486,8 @@ function AuthContent() {
                   {forgotLoading ? 'Requesting OTP...' : 'Send Verification OTP'}
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleForgotReset} className="flex flex-col gap-4 text-xs text-gray-700">
+            ) : forgotStep === 'otp' ? (
+              <form onSubmit={handleVerifyOTP} className="flex flex-col gap-4 text-xs text-gray-700">
                 <div className="flex flex-col gap-1.5">
                   <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">6-Digit Verification OTP</label>
                   <input 
@@ -478,6 +501,28 @@ function AuthContent() {
                   />
                 </div>
 
+                {forgotError && (
+                  <p className="text-red-500 font-semibold bg-red-50 p-2.5 rounded border border-red-100 text-xs">
+                    {forgotError}
+                  </p>
+                )}
+
+                {forgotSuccess && (
+                  <p className="text-green-700 bg-green-50 border border-green-200 p-2.5 rounded font-semibold text-xs">
+                    {forgotSuccess}
+                  </p>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={forgotLoading}
+                  className="bg-primary hover:bg-primary-hover disabled:bg-zinc-400 text-white py-3 text-xs font-bold uppercase tracking-wider rounded transition-colors shadow flex items-center justify-center gap-1.5"
+                >
+                  {forgotLoading ? 'Verifying OTP...' : 'Verify OTP'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPassword} className="flex flex-col gap-4 text-xs text-gray-700">
                 <div className="flex flex-col gap-1.5">
                   <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Create New Password</label>
                   <div className="relative">
@@ -528,7 +573,7 @@ function AuthContent() {
                   disabled={forgotLoading}
                   className="bg-primary hover:bg-primary-hover disabled:bg-zinc-400 text-white py-3 text-xs font-bold uppercase tracking-wider rounded transition-colors shadow flex items-center justify-center gap-1.5"
                 >
-                  {forgotLoading ? 'Resetting Password...' : 'Verify & Reset Password'}
+                  {forgotLoading ? 'Resetting Password...' : 'Reset Password'}
                 </button>
               </form>
             )}

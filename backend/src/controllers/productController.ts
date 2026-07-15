@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Request, Response } from 'express';
 import Product from '../models/Product';
 import Order from '../models/Order';
@@ -22,12 +23,17 @@ export const getProducts = async (req: Request, res: Response) => {
     
     if (search) {
       const searchRegex = new RegExp(String(search), 'i');
-      query.$or = [
+      const conditions: any[] = [
         { name: searchRegex },
         { description: searchRegex },
         { category: searchRegex },
-        { fabric: searchRegex }
+        { fabric: searchRegex },
+        { color: searchRegex }
       ];
+      if (mongoose.Types.ObjectId.isValid(String(search))) {
+        conditions.push({ _id: search });
+      }
+      query.$or = conditions;
     }
 
     let sortOption: any = {};
@@ -195,13 +201,18 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
       return res.json([]);
     }
     const regex = new RegExp(String(q), 'i');
+    const conditions: any[] = [
+      { name: regex },
+      { category: regex },
+      { fabric: regex },
+      { color: regex }
+    ];
+    if (mongoose.Types.ObjectId.isValid(String(q))) {
+      conditions.push({ _id: q });
+    }
     const products = await Product.find({
-      $or: [
-        { name: regex },
-        { category: regex },
-        { fabric: regex }
-      ]
-    }).limit(8).select('name category price images');
+      $or: conditions
+    }).limit(8).select('name category fabric color price images');
     res.json(products);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

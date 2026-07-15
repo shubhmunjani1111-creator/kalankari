@@ -7,7 +7,7 @@ import { Mail, Phone, MapPin, Instagram } from 'lucide-react';
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-[#1A1A1A] text-[#F6E7D8] pt-16 pb-20 lg:pb-8 border-t border-gray-900 w-full mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-gray-800 pb-12 mb-8 text-left">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-12 border-b border-gray-800 pb-12 mb-8 text-left">
         
         {/* Brand info */}
         <div className="flex flex-col gap-4">
@@ -78,11 +78,35 @@ export const Footer: React.FC = () => {
             <Link href="/track" className="hover:text-secondary transition-colors">
               Track Shipment
             </Link>
-            <Link href="/return-exchange" className="hover:text-secondary transition-colors">
-              Returns & Exchanges
+            <Link href="/exchange" className="hover:text-secondary transition-colors">
+              Exchange Desk
             </Link>
             <Link href="/contact" className="hover:text-secondary transition-colors">
-              Send Message
+              Contact Us
+            </Link>
+          </nav>
+        </div>
+
+        {/* Legal Policies */}
+        <div className="flex flex-col gap-4">
+          <h4 className="font-headings font-bold text-lg text-white border-l-2 border-secondary pl-2 uppercase tracking-wide">
+            Legal Desk
+          </h4>
+          <nav className="flex flex-col gap-2.5 text-sm text-gray-400">
+            <Link href="/privacy-policy" className="hover:text-secondary transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms-conditions" className="hover:text-secondary transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link href="/refund-policy" className="hover:text-secondary transition-colors">
+              Refund Policy
+            </Link>
+            <Link href="/shipping-policy" className="hover:text-secondary transition-colors">
+              Shipping Policy
+            </Link>
+            <Link href="/cancellation-policy" className="hover:text-secondary transition-colors">
+              Cancellation Policy
             </Link>
           </nav>
         </div>
@@ -103,7 +127,7 @@ export const Footer: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Mail size={16} className="text-secondary flex-shrink-0" />
-              <a href="mailto:kalankari8972@gmail.com" className="hover:underline">kalankari8972@gmail.com</a>
+              <a href="mailto:support@kalankari.com" className="hover:underline">support@kalankari.com</a>
             </div>
           </div>
         </div>

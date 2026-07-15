@@ -8,6 +8,22 @@ import { PRODUCTS } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
 import { API_BASE_URL } from '@/config';
 
+const getNormalizedCollection = (product: any): string => {
+  const cat = (product.category || "").toLowerCase().trim();
+  const coll = (product.collectionType || "").toLowerCase().trim();
+  
+  if (cat.includes("floral") || coll.includes("floral")) {
+    return "Floral Collection";
+  }
+  if (cat.includes("festive") || coll.includes("festive") || cat.includes("festival") || coll.includes("festival")) {
+    return "Festive Collection";
+  }
+  if (cat.includes("premium") || coll.includes("premium")) {
+    return "Premium Collection";
+  }
+  return product.category || "Other";
+};
+
 export default function Home() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
@@ -79,9 +95,13 @@ export default function Home() {
     setActiveHeroSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  const uniqueCategories = Array.from(new Set(dbProducts.map(p => p.category)));
+  const uniqueCategories = [
+    "Floral Collection",
+    "Festive Collection",
+    "Premium Collection"
+  ];
 
-  const featuredProducts = dbProducts.filter(p => p.isFeatured || p.collectionType === 'Premium');
+  const featuredProducts = dbProducts.filter(p => p.isFeaturedProduct);
   const bestSellers = dbProducts.filter(p => p.isBestSeller);
   const newArrivals = dbProducts.filter(p => p.isNewArrival);
   const instagramProducts = dbProducts.slice(0, 6);
@@ -207,12 +227,18 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {uniqueCategories.map((catName) => {
-            const catProducts = PRODUCTS.filter(p => p.category === catName);
+            const catProducts = dbProducts.filter(p => getNormalizedCollection(p) === catName);
             const count = catProducts.length;
 
-            if (count === 0) return null;
+            const defaultImages: Record<string, string> = {
+              "Floral Collection": "/products/file_00000000405c720cbb142ab6916ffcbe.png",
+              "Festive Collection": "/products/file_00000000046c720795da034dd2674be1.png",
+              "Premium Collection": "/products/file_0000000013f07206809b90484b6de3a1 (1).png"
+            };
 
-            const coverImage = catProducts[0].images[0];
+            const coverImage = catProducts.length > 0 && catProducts[0].images && catProducts[0].images[0]
+              ? catProducts[0].images[0]
+              : (defaultImages[catName] || "/logo.jpg");
 
             return (
               <Link 
@@ -332,8 +358,8 @@ export default function Home() {
                 <RefreshCw size={24} />
               </div>
               <div className="text-left">
-                <h3 className="font-headings text-lg font-bold mb-2">Easy Returns</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">Unsatisfied with your sizing? Return or exchange easily within 7 days of delivery.</p>
+                <h3 className="font-headings text-lg font-bold mb-2">Exchange Desk</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">Need a different size or print? Request an exchange easily within 7 days of delivery.</p>
               </div>
             </div>
           </div>
@@ -382,45 +408,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Instagram Live Feed */}
-      <section className="py-20 border-t border-gray-100 dark:border-zinc-900 w-full bg-white dark:bg-[#0F0E0E]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-primary dark:text-secondary uppercase tracking-[0.2em] font-semibold text-xs block mb-3">Join Our Journey</span>
-            <h2 className="text-3xl font-headings font-bold">#KalankariArtistry</h2>
-            <p className="text-xs text-gray-400 mt-2">
-              Follow us on Instagram{" "}
-              <a href="https://instagram.com/kalankari.06" target="_blank" rel="noopener noreferrer" className="text-primary dark:text-secondary font-bold hover:underline">
-                @kalankari.06
-              </a>{" "}
-              for fashion inspiration
-            </p>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {instagramProducts.map((p, idx) => (
-              <Link 
-                key={p.id} 
-                href={`/shop/${p.id}`} 
-                className="relative group aspect-square overflow-hidden bg-gray-100 dark:bg-zinc-900 rounded-md block shadow-sm"
-              >
-                <img 
-                  src={p.images[0]} 
-                  alt={`Instagram feed product ${idx + 1}`} 
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white z-20">
-                  <div className="text-center">
-                    <Instagram size={24} className="mx-auto" />
-                    <p className="text-[8px] uppercase tracking-wider mt-1.5 font-bold">View product</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
     </div>
   );

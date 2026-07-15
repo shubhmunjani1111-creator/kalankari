@@ -26,15 +26,18 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Kalankari | Where Art Meets Fashion - Premium Printed Kurtis",
-  description: "Browse Kalankari's exquisite collections of designer digital printed kurtis. Handcrafted motifs, premium silk/cotton fabrics, and modern Indian designs.",
-  keywords: ["printed kurti", "designer ethnic wear", "Indian fashion brand", "modern silk kurti"],
+  title: "Kalankari | Premium Digital Printed Kurtis Brand",
+  description: "Explore Kalankari's beautiful collection of luxury digital printed kurtis. Handcrafted motifs, premium silk/cotton fabrics, and modern Indian designer kurtas.",
+  keywords: ["printed kurti", "designer ethnic wear", "Indian fashion brand", "modern silk kurti", "Kalankari kurtis", "Surat prints"],
+  icons: {
+    icon: "/logo.jpg",
+  },
   openGraph: {
-    title: "Kalankari - Where Art Meets Fashion",
-    description: "Discover luxury digital printed kurtis tailored for the modern Indian woman.",
-    url: "https://kalankari.in",
+    title: "Kalankari | Premium Digital Printed Kurtis Brand",
+    description: "Explore Kalankari's beautiful collection of luxury digital printed kurtis. Handcrafted motifs and premium fabrics.",
+    url: "https://kalankari.com",
     siteName: "Kalankari Kurtis",
-    images: [{ url: "https://kalankari.in/og-image.jpg" }],
+    images: [{ url: "https://kalankari.com/logo.jpg" }],
     type: "website",
   },
 };

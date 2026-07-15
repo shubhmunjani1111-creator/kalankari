@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { PRODUCTS } from '@/data/products';
+import { API_BASE_URL } from '@/config';
 
 // Levenshtein Distance for Typo Correction
 const levenshteinDistance = (a: string, b: string): number => {
@@ -60,7 +61,7 @@ export const Navbar: React.FC = () => {
 
   // Search autocomplete state
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<typeof PRODUCTS>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [typoSuggestion, setTypoSuggestion] = useState<string | null>(null);
 
@@ -69,7 +70,7 @@ export const Navbar: React.FC = () => {
   const announcements = [
     "Free Shipping on Orders Above ₹1,499!",
     "New Festive Silk Collection is now Live!",
-    "Easy Returns & Exchanges within 7 Days!"
+    "Easy Sizing & Design Exchanges within 7 Days!"
   ];
 
   // Rotate announcements
@@ -99,22 +100,25 @@ export const Navbar: React.FC = () => {
       return;
     }
 
-    const term = searchQuery.toLowerCase().trim();
-    const matches = PRODUCTS.filter(p => 
-      p.name.toLowerCase().includes(term) || 
-      p.fabric.toLowerCase().includes(term) || 
-      p.color.toLowerCase().includes(term) || 
-      p.category.toLowerCase().includes(term) ||
-      p.price.toString().includes(term)
-    );
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/products/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+          
+          if (data.length === 0) {
+            setTypoSuggestion(getTypoCorrection(searchQuery.toLowerCase().trim()));
+          } else {
+            setTypoSuggestion(null);
+          }
+        }
+      } catch (err) {
+        console.error("Live search autocomplete failed:", err);
+      }
+    }, 200);
 
-    setSearchResults(matches);
-
-    if (matches.length === 0) {
-      setTypoSuggestion(getTypoCorrection(term));
-    } else {
-      setTypoSuggestion(null);
-    }
+    return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
   // Execute search submission
@@ -429,8 +433,8 @@ export const Navbar: React.FC = () => {
               ) : (
                 searchResults.map((match) => (
                   <Link 
-                    key={match.id} 
-                    href={`/shop/${match.id}`} 
+                    key={match._id || match.id} 
+                    href={`/shop/${match._id || match.id}`} 
                     onClick={() => setSearchOpen(false)}
                     className="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors text-left"
                   >

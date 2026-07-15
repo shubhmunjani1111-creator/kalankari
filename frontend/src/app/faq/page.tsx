@@ -32,15 +32,15 @@ export default function FAQ() {
       ]
     },
     {
-      category: "Returns, Refunds & Exchanges",
+      category: "Exchanges & Policies",
       questions: [
         {
-          q: "What is your return policy?",
-          a: "We offer a hassle-free 7-day return and exchange policy from the date of delivery. The item must be unused, unwashed, and have all original tag attachments. You can request a return directly from the Customer Desk or by contacting support."
+          q: "Do you support returns or refunds?",
+          a: "We operate on an Exchange Only policy. We do not provide refunds or returns unless the product arrived damaged or defective and a replacement is unavailable. You can exchange your kurti for a different size or alternative print design within 7 days of delivery."
         },
         {
-          q: "How long does it take to process a refund?",
-          a: "Once the return product reaches our warehouse and passes QC (quality check), your refund is initiated immediately. For card payments, it takes 3-5 business days to reflect in your account. COD orders are refunded via UPI or bank transfer."
+          q: "How do I request a size or design exchange?",
+          a: "To initiate an exchange, please visit our Exchange Desk page, enter your Order ID, and specify the desired replacement details. We will arrange a free reverse pickup from your shipping address within 24-48 hours."
         }
       ]
     },

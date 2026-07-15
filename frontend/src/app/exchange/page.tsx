@@ -1,27 +1,27 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowLeft, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Mail } from 'lucide-react';
+import { ArrowLeft, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-export default function ReturnExchangePage() {
+export default function ExchangePage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     orderId: "",
-    requestType: "return", // return, exchange
+    requestType: "exchange",
     reason: "",
-    itemsToReturn: ""
+    itemsToReturn: "" // items to exchange
   });
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -39,13 +39,13 @@ export default function ReturnExchangePage() {
 
     setLoading(true);
     try {
-      const subject = `[${requestType.toUpperCase()} REQUEST] Order #${orderId}`;
-      const messageContent = `Request Type: ${requestType.toUpperCase()}
+      const subject = `[EXCHANGE REQUEST] Order #${orderId}`;
+      const messageContent = `Request Type: EXCHANGE
 Order ID: ${orderId}
-Items for return/exchange:
+Items to Exchange:
 ${itemsToReturn}
 
-Reason:
+Reason for Exchange:
 ${reason}`;
 
       const response = await fetch(`${API_BASE_URL}/api/support/message`, {
@@ -63,21 +63,21 @@ ${reason}`;
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to submit request.");
+        throw new Error(data.error || "Failed to submit exchange request.");
       }
 
-      setSuccessMsg("Your return/exchange request has been submitted successfully. Our team will email you soon!");
+      setSuccessMsg("Your product exchange request has been submitted successfully. Our team will contact you via email shortly!");
       setFormData({
         name: "",
         email: "",
         phone: "",
         orderId: "",
-        requestType: "return",
+        requestType: "exchange",
         reason: "",
         itemsToReturn: ""
       });
     } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred while submitting your request.");
+      setErrorMsg(err.message || "An error occurred while submitting your exchange request.");
     } finally {
       setLoading(false);
     }
@@ -89,28 +89,28 @@ ${reason}`;
         <Link href="/shop" className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary uppercase tracking-wider transition-colors mb-4">
           <ArrowLeft size={14} /> Back to Shop
         </Link>
-        <h1 className="font-headings font-bold text-3xl text-gray-900 leading-tight">Returns & Exchanges</h1>
-        <p className="text-sm text-gray-500 mt-2">Submit a request for items you wish to return or exchange within 7 days of delivery.</p>
+        <h1 className="font-headings font-bold text-3xl text-gray-900 leading-tight">Product Exchange Desk</h1>
+        <p className="text-sm text-gray-500 mt-2">Submit an exchange request for size modifications or product replacements within 7 days of delivery.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Guidelines / Policy Column */}
         <div className="lg:col-span-4 bg-gray-50 border border-gray-150 p-6 rounded-lg space-y-5 text-xs text-gray-600">
           <h3 className="font-headings font-bold text-sm text-gray-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <RefreshCw size={16} className="text-primary" /> Return Guidelines
+            <RefreshCw size={16} className="text-primary" /> Exchange Guidelines
           </h3>
           <ul className="list-disc pl-4 space-y-2.5 leading-relaxed">
             <li>Items must be unworn, unwashed, and in their original packaging with tags intact.</li>
-            <li>Request must be submitted within <strong>7 days</strong> of order delivery.</li>
-            <li>For <strong>exchanges</strong>, specify the required replacement size in the request.</li>
-            <li>Refunds for returned items are credited back to your original payment method or bank account within 5-7 business days of warehouse inspection.</li>
+            <li>Exchange requests must be submitted within <strong>7 days</strong> of delivery.</li>
+            <li>Clearly specify the desired replacement size or alternative kurti design in the form details.</li>
+            <li>We offer free reverse pick-up and exchange shipping throughout India.</li>
           </ul>
 
           <div className="bg-white p-4 border border-gray-200 rounded flex gap-2 items-start mt-4">
             <ShieldCheck size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <strong className="text-gray-800 block">Quality Assured</strong>
-              <span className="text-[10px] text-gray-400 block mt-0.5">Every exchange is inspected at our hub in Surat before replacement.</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">Every exchange is inspected at our hub in Surat before dispatching replacements.</span>
             </div>
           </div>
         </div>
@@ -172,40 +172,27 @@ ${reason}`;
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Select Request Type *</label>
-              <select 
-                name="requestType" 
-                value={formData.requestType} 
-                onChange={handleChange}
-                className="py-2.5 px-4 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs bg-transparent" 
-              >
-                <option value="return">Return for Refund</option>
-                <option value="exchange">Size / Product Exchange</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Items for Return/Exchange *</label>
+              <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Items for Exchange *</label>
               <textarea 
                 name="itemsToReturn" 
                 required 
                 rows={2}
                 value={formData.itemsToReturn} 
                 onChange={handleChange}
-                placeholder="Specify product name, color, and size (e.g., Floral Digital Silk Kurti - Pink - Medium)"
+                placeholder="Specify product name, color, and size (e.g., Mayur Peacock Premium Kurti - Maroon - Medium)"
                 className="py-2.5 px-4 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs resize-none" 
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Reason for Request *</label>
+              <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Reason & Replacement Details *</label>
               <textarea 
                 name="reason" 
                 required 
                 rows={4}
                 value={formData.reason} 
                 onChange={handleChange}
-                placeholder="Provide a detailed explanation of why you wish to return/exchange the item."
+                placeholder="Provide details about why you want to exchange and what size/product you need as replacement."
                 className="py-2.5 px-4 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs resize-none" 
               />
             </div>
@@ -229,7 +216,7 @@ ${reason}`;
               disabled={loading}
               className="bg-primary hover:bg-primary-hover disabled:bg-zinc-400 text-white py-3.5 font-bold uppercase tracking-wider text-xs rounded transition-colors shadow mt-2"
             >
-              {loading ? 'Submitting Request...' : 'Submit Request'}
+              {loading ? 'Submitting Request...' : 'Submit Exchange Request'}
             </button>
           </form>
         </div>

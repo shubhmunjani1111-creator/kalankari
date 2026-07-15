@@ -30,7 +30,9 @@ export const metadata: Metadata = {
   description: "Explore Kalankari's beautiful collection of luxury digital printed kurtis. Handcrafted motifs, premium silk/cotton fabrics, and modern Indian designer kurtas.",
   keywords: ["printed kurti", "designer ethnic wear", "Indian fashion brand", "modern silk kurti", "Kalankari kurtis", "Surat prints"],
   icons: {
-    icon: "/logo.jpg",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/logo.jpg",
   },
   openGraph: {
     title: "Kalankari | Premium Digital Printed Kurtis Brand",

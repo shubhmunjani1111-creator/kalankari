@@ -10,7 +10,7 @@ export default function CancellationPolicy() {
         <section>
           <h2 className="font-headings font-bold text-lg text-gray-800 dark:text-white mb-2.5">1. Order Cancellations by Customer</h2>
           <p>You can request to cancel your order within <strong>6 hours of placing it</strong>, provided the order has not been dispatched. Once our shipping partners pick up the package from our Surat warehouse, the order cannot be cancelled under any circumstances.</p>
-          <p className="mt-2.5">To request a cancellation, please email us immediately at <a href="mailto:support@kalankari.com" className="text-primary hover:underline">support@kalankari.com</a> or message us on WhatsApp with your Order ID.</p>
+          <p className="mt-2.5">To request a cancellation, please email us immediately at <a href="mailto:kalankari8972@gmail.com" className="text-primary hover:underline">kalankari8972@gmail.com</a> or message us on WhatsApp with your Order ID.</p>
         </section>
 
         <section>

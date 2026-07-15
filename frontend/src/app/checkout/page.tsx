@@ -443,12 +443,7 @@ export default function Checkout() {
                 <span className="font-semibold text-gray-800 dark:text-gray-200">₹{subtotal.toLocaleString()}</span>
               </div>
               
-              {discount > 0 && (
-                <div className="flex justify-between text-green-600 dark:text-green-400">
-                  <span>Discount:</span>
-                  <span className="font-semibold">-₹{discount.toLocaleString()}</span>
-                </div>
-              )}
+
 
               <div className="flex justify-between">
                 <span>Shipping:</span>

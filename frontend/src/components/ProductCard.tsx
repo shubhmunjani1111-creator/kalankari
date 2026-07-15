@@ -97,9 +97,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             ₹{product.price}
           </span>
           {product.originalPrice > product.price && (
-            <span className="text-xs text-gray-400 line-through">
-              ₹{product.originalPrice}
-            </span>
+            <>
+              <span className="text-xs text-gray-400 line-through">
+                ₹{product.originalPrice}
+              </span>
+              <span className="text-[10px] text-green-600 font-bold">
+                ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)
+              </span>
+            </>
           )}
         </div>
       </div>

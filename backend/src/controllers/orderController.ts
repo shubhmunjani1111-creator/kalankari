@@ -258,7 +258,7 @@ export const generateGSTInvoice = async (req: AuthRequest, res: Response) => {
               <strong>Kalankari</strong><br>
               Kedar Business Center, Dabholi Road,<br>
               Katargam, Surat - 395004<br>
-              Gujarat, India | support@kalankari.com
+              Gujarat, India | kalankari8972@gmail.com
             </div>
           </div>
 

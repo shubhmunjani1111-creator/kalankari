@@ -121,50 +121,6 @@ export default function Cart() {
 
           {/* Cart Summary */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            
-            {/* Promo Code box */}
-            <div className="bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm text-left">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
-                <Tag size={14} className="text-secondary" /> Coupon Discount
-              </h3>
-              
-              {activeCoupon ? (
-                <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-950/40 text-green-700 dark:text-green-400 p-3.5 rounded flex items-center justify-between text-xs font-semibold">
-                  <div className="flex items-center gap-2">
-                    <Tag size={12} />
-                    <span>Coupon <strong>{activeCoupon.code}</strong> Applied!</span>
-                  </div>
-                  <span className="text-[10px] bg-green-600 text-white px-2 py-0.5 rounded">Active</span>
-                </div>
-              ) : (
-                <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                  <input 
-                    type="text" 
-                    placeholder="Enter coupon code" 
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-grow py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded text-xs bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary uppercase font-bold"
-                  />
-                  <button 
-                    type="submit" 
-                    className="bg-primary hover:bg-primary-hover text-white text-[10px] font-bold uppercase tracking-wider py-2 px-4 rounded transition-colors"
-                  >
-                    Apply
-                  </button>
-                </form>
-              )}
-              {couponError && (
-                <p className="text-[10px] text-red-500 font-semibold mt-2">{couponError}</p>
-              )}
-              {!activeCoupon && (
-                <div className="mt-3.5 text-[10px] text-gray-400 leading-relaxed font-semibold">
-                  <p>💡 Available Promo Codes:</p>
-                  <p>• <strong>WELCOME500</strong>: Flat ₹500 discount</p>
-                  <p>• <strong>GOLD20</strong>: 20% discount on order value</p>
-                  <p>• <strong>ART10</strong>: 10% discount on order value</p>
-                </div>
-              )}
-            </div>
 
             {/* Calculations Breakdown */}
             <div className="bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm text-left">
@@ -178,12 +134,7 @@ export default function Cart() {
                   <span className="font-semibold text-gray-800 dark:text-gray-200">₹{subtotal.toLocaleString()}</span>
                 </div>
                 
-                {discount > 0 && (
-                  <div className="flex justify-between text-green-600 dark:text-green-400">
-                    <span>Discount Coupon</span>
-                    <span className="font-semibold">-₹{discount.toLocaleString()}</span>
-                  </div>
-                )}
+
 
 
 

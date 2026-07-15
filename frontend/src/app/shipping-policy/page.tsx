@@ -9,7 +9,7 @@ export default function ShippingPolicy() {
       <div className="space-y-6 text-sm leading-relaxed">
         <section>
           <h2 className="font-headings font-bold text-lg text-gray-800 dark:text-white mb-2.5">1. Shipping Charges</h2>
-          <p>We offer <strong>Free Shipping</strong> throughout India on all prepaid and Cash on Delivery (COD) orders above ₹1,199. For orders below ₹1,199, a standard shipping fee of ₹99 is applicable at checkout.</p>
+          <p>We offer <strong>Free Shipping</strong> throughout India on all prepaid and Cash on Delivery (COD) orders above ₹1,499. For orders below ₹1,499, a standard shipping fee of ₹99 is applicable at checkout.</p>
         </section>
 
         <section>

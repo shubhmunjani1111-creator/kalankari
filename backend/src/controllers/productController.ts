@@ -56,7 +56,14 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const idOrSlug = req.params.id;
+    let product;
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+      product = await Product.findById(idOrSlug);
+    }
+    if (!product) {
+      product = await Product.findOne({ 'seo.slug': idOrSlug });
+    }
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -72,6 +79,9 @@ export const createProduct = async (req: Request, res: Response) => {
     await newProduct.save();
     res.status(201).json(newProduct);
   } catch (err: any) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern['seo.slug']) {
+      return res.status(400).json({ error: 'URL Slug must be unique. This slug is already in use.' });
+    }
     res.status(400).json({ error: err.message });
   }
 };
@@ -109,6 +119,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
     res.json(product);
   } catch (err: any) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern['seo.slug']) {
+      return res.status(400).json({ error: 'URL Slug must be unique. This slug is already in use.' });
+    }
     res.status(500).json({ error: err.message });
   }
 };

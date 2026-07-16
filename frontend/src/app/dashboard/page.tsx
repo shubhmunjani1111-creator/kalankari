@@ -43,6 +43,13 @@ export default function Dashboard() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   
+  // SEO panel states
+  const [editDesignPanelOpen, setEditDesignPanelOpen] = useState(true);
+  const [editSEOPanelOpen, setEditSEOPanelOpen] = useState(false);
+  const [addDesignPanelOpen, setAddDesignPanelOpen] = useState(true);
+  const [addSEOPanelOpen, setAddSEOPanelOpen] = useState(false);
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  
   // Stock inline edit states
   const [editingStockId, setEditingStockId] = useState<string | null>(null);
   const [editingStockVal, setEditingStockVal] = useState<number>(0);
@@ -65,7 +72,14 @@ export default function Dashboard() {
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isFeaturedProduct: false
+    isFeaturedProduct: false,
+    seo: {
+      metaTitle: '',
+      metaDescription: '',
+      keywords: '',
+      slug: '',
+      imageAlt: ''
+    }
   });
 
   const [imageInput, setImageInput] = useState('');
@@ -601,6 +615,7 @@ export default function Dashboard() {
 
   // Open modals helper
   const openAddModal = () => {
+    setIsSlugManuallyEdited(false);
     setProductForm({
       name: '',
       price: 1999,
@@ -618,7 +633,14 @@ export default function Dashboard() {
       isFeatured: filterFeatured === 'featured',
       isBestSeller: false,
       isNewArrival: true,
-      isFeaturedProduct: false
+      isFeaturedProduct: false,
+      seo: {
+        metaTitle: '',
+        metaDescription: '',
+        keywords: '',
+        slug: '',
+        imageAlt: ''
+      }
     });
     setImagesList(['/products/file_00000000046c720795da034dd2674be1.png']);
     setImageInput('');
@@ -627,6 +649,7 @@ export default function Dashboard() {
 
   const openEditModal = (p: any) => {
     setEditingProduct(p);
+    setIsSlugManuallyEdited(!!p.seo?.slug);
     setProductForm({
       name: p.name,
       price: p.price,
@@ -644,7 +667,14 @@ export default function Dashboard() {
       isFeatured: !!p.isFeatured,
       isBestSeller: !!p.isBestSeller,
       isNewArrival: !!p.isNewArrival,
-      isFeaturedProduct: !!p.isFeaturedProduct
+      isFeaturedProduct: !!p.isFeaturedProduct,
+      seo: {
+        metaTitle: p.seo?.metaTitle || '',
+        metaDescription: p.seo?.metaDescription || '',
+        keywords: p.seo?.keywords ? p.seo.keywords.join(', ') : '',
+        slug: p.seo?.slug || '',
+        imageAlt: p.seo?.imageAlt || ''
+      }
     });
     setImagesList(p.images || []);
     setImageInput('');
@@ -654,7 +684,16 @@ export default function Dashboard() {
   // Submit Add Product
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalForm = { ...productForm, images: imagesList };
+    const finalForm = {
+      ...productForm,
+      images: imagesList,
+      seo: {
+        ...productForm.seo,
+        keywords: typeof productForm.seo.keywords === 'string'
+          ? productForm.seo.keywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+          : productForm.seo.keywords
+      }
+    };
     try {
       const res = await fetch(`${API_BASE_URL}/api/products`, {
         method: 'POST',
@@ -664,21 +703,33 @@ export default function Dashboard() {
         },
         body: JSON.stringify(finalForm)
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setProducts(prev => [data, ...prev]);
         setShowAddModal(false);
         showNotification("New kurti design added successfully!");
+      } else {
+        alert(data.error || "Failed to add design.");
       }
     } catch (err) {
       console.error(err);
+      alert("Network error.");
     }
   };
 
   // Submit Edit Product
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalForm = { ...productForm, images: imagesList };
+    const finalForm = {
+      ...productForm,
+      images: imagesList,
+      seo: {
+        ...productForm.seo,
+        keywords: typeof productForm.seo.keywords === 'string'
+          ? productForm.seo.keywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+          : productForm.seo.keywords
+      }
+    };
     try {
       const res = await fetch(`${API_BASE_URL}/api/products/${editingProduct._id}`, {
         method: 'PUT',
@@ -688,14 +739,17 @@ export default function Dashboard() {
         },
         body: JSON.stringify(finalForm)
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setProducts(prev => prev.map(p => p._id === data._id ? data : p));
         setShowEditModal(false);
         showNotification("Design details modified successfully!");
+      } else {
+        alert(data.error || "Failed to modify design.");
       }
     } catch (err) {
       console.error(err);
+      alert("Network error.");
     }
   };
 
@@ -1601,13 +1655,39 @@ export default function Dashboard() {
             </div>
 
             <form onSubmit={handleAddSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Product Name</label>
+              {/* Accordion 1: Design Details */}
+              <div className="border border-gray-150 dark:border-zinc-900 rounded-md overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setAddDesignPanelOpen(!addDesignPanelOpen)}
+                  className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-zinc-900/50 text-[11px] font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-150 dark:border-zinc-900 select-none hover:bg-gray-100/50 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  <span className="flex items-center gap-2">📝 Add Design Details</span>
+                  <span className="text-[10px] text-gray-400">{addDesignPanelOpen ? '▲' : '▼'}</span>
+                </button>
+                {addDesignPanelOpen && (
+                  <div className="p-4 flex flex-col gap-4">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Product Name</label>
                 <input 
                   type="text" 
                   required
                   value={productForm.name} 
-                  onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setProductForm(prev => {
+                      const next = { ...prev, name: val };
+                      if (!isSlugManuallyEdited) {
+                        const generatedSlug = val
+                          .toLowerCase()
+                          .trim()
+                          .replace(/[^a-z0-9\s-]/g, '')
+                          .replace(/\s+/g, '-');
+                        next.seo = { ...next.seo, slug: generatedSlug };
+                      }
+                      return next;
+                    });
+                  }}
                   className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
                 />
               </div>
@@ -1860,9 +1940,123 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+        </div>
 
-              <button 
-                type="submit"
+          {/* Accordion 2: SEO Details */}
+          <div className="border border-gray-150 dark:border-zinc-900 rounded-md overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAddSEOPanelOpen(!addSEOPanelOpen)}
+              className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-zinc-900/50 text-[11px] font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-150 dark:border-zinc-900 select-none hover:bg-gray-100/50 dark:hover:bg-zinc-900 transition-colors"
+            >
+              <span className="flex items-center gap-2">🌐 Edit SEO Details</span>
+              <span className="text-[10px] text-gray-400">{addSEOPanelOpen ? '▲' : '▼'}</span>
+            </button>
+            {addSEOPanelOpen && (
+              <div className="p-4 flex flex-col gap-4">
+                
+                {/* Meta Title */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <div className="flex justify-between items-center">
+                    <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Meta Title</label>
+                    <span className={`text-[9px] font-bold ${(productForm.seo?.metaTitle || '').length > 60 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {(productForm.seo?.metaTitle || '').length}/60
+                    </span>
+                  </div>
+                  <input 
+                    type="text" 
+                    maxLength={60}
+                    placeholder="Enter SEO meta title (max 60 characters)"
+                    value={productForm.seo?.metaTitle || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, metaTitle: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+                {/* Meta Description */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <div className="flex justify-between items-center">
+                    <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Meta Description</label>
+                    <span className={`text-[9px] font-bold ${(productForm.seo?.metaDescription || '').length > 160 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {(productForm.seo?.metaDescription || '').length}/160
+                    </span>
+                  </div>
+                  <textarea 
+                    rows={3}
+                    maxLength={160}
+                    placeholder="Enter SEO meta description (max 160 characters)"
+                    value={productForm.seo?.metaDescription || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, metaDescription: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs resize-none" 
+                  />
+                </div>
+
+                {/* SEO Keywords */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">SEO Keywords (Comma separated)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. digital printed kurti, cotton kurti, women kurti"
+                    value={productForm.seo?.keywords || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, keywords: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+                {/* URL Slug */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">URL Slug (Auto-generated/Editable)</label>
+                  <input 
+                    type="text" 
+                    placeholder="slug-path-format"
+                    value={productForm.seo?.slug || ''} 
+                    onChange={(e) => {
+                      const val = e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                      setIsSlugManuallyEdited(true);
+                      setProductForm(prev => ({ 
+                        ...prev, 
+                        seo: { ...prev.seo, slug: val } 
+                      }));
+                    }}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs font-mono" 
+                  />
+                </div>
+
+                {/* Image Alt Text */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Image Alt Text</label>
+                  <input 
+                    type="text" 
+                    placeholder="Description of product image views"
+                    value={productForm.seo?.imageAlt || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, imageAlt: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          <button 
+            type="submit"
                 className="bg-primary hover:bg-primary-hover text-white py-3.5 font-bold uppercase tracking-wider text-xs rounded mt-2 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Plus size={14} /> Register Kurti Design
@@ -1882,13 +2076,39 @@ export default function Dashboard() {
             </div>
 
             <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Product Name</label>
+              {/* Accordion 1: Edit Design Details */}
+              <div className="border border-gray-150 dark:border-zinc-900 rounded-md overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setEditDesignPanelOpen(!editDesignPanelOpen)}
+                  className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-zinc-900/50 text-[11px] font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-150 dark:border-zinc-900 select-none hover:bg-gray-100/50 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  <span className="flex items-center gap-2">📝 Edit Design Details</span>
+                  <span className="text-[10px] text-gray-400">{editDesignPanelOpen ? '▲' : '▼'}</span>
+                </button>
+                {editDesignPanelOpen && (
+                  <div className="p-4 flex flex-col gap-4">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Product Name</label>
                 <input 
                   type="text" 
                   required
                   value={productForm.name} 
-                  onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setProductForm(prev => {
+                      const next = { ...prev, name: val };
+                      if (!isSlugManuallyEdited) {
+                        const generatedSlug = val
+                          .toLowerCase()
+                          .trim()
+                          .replace(/[^a-z0-9\s-]/g, '')
+                          .replace(/\s+/g, '-');
+                        next.seo = { ...next.seo, slug: generatedSlug };
+                      }
+                      return next;
+                    });
+                  }}
                   className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
                 />
               </div>
@@ -2141,9 +2361,123 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+        </div>
 
-              <button 
-                type="submit"
+          {/* Accordion 2: Edit SEO Details */}
+          <div className="border border-gray-150 dark:border-zinc-900 rounded-md overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setEditSEOPanelOpen(!editSEOPanelOpen)}
+              className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-zinc-900/50 text-[11px] font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-150 dark:border-zinc-900 select-none hover:bg-gray-100/50 dark:hover:bg-zinc-900 transition-colors"
+            >
+              <span className="flex items-center gap-2">🌐 Edit SEO Details</span>
+              <span className="text-[10px] text-gray-400">{editSEOPanelOpen ? '▲' : '▼'}</span>
+            </button>
+            {editSEOPanelOpen && (
+              <div className="p-4 flex flex-col gap-4">
+                
+                {/* Meta Title */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <div className="flex justify-between items-center">
+                    <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Meta Title</label>
+                    <span className={`text-[9px] font-bold ${(productForm.seo?.metaTitle || '').length > 60 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {(productForm.seo?.metaTitle || '').length}/60
+                    </span>
+                  </div>
+                  <input 
+                    type="text" 
+                    maxLength={60}
+                    placeholder="Enter SEO meta title (max 60 characters)"
+                    value={productForm.seo?.metaTitle || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, metaTitle: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+                {/* Meta Description */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <div className="flex justify-between items-center">
+                    <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Meta Description</label>
+                    <span className={`text-[9px] font-bold ${(productForm.seo?.metaDescription || '').length > 160 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {(productForm.seo?.metaDescription || '').length}/160
+                    </span>
+                  </div>
+                  <textarea 
+                    rows={3}
+                    maxLength={160}
+                    placeholder="Enter SEO meta description (max 160 characters)"
+                    value={productForm.seo?.metaDescription || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, metaDescription: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs resize-none" 
+                  />
+                </div>
+
+                {/* SEO Keywords */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">SEO Keywords (Comma separated)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. digital printed kurti, cotton kurti, women kurti"
+                    value={productForm.seo?.keywords || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, keywords: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+                {/* URL Slug */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">URL Slug (Auto-generated/Editable)</label>
+                  <input 
+                    type="text" 
+                    placeholder="slug-path-format"
+                    value={productForm.seo?.slug || ''} 
+                    onChange={(e) => {
+                      const val = e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                      setIsSlugManuallyEdited(true);
+                      setProductForm(prev => ({ 
+                        ...prev, 
+                        seo: { ...prev.seo, slug: val } 
+                      }));
+                    }}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs font-mono" 
+                  />
+                </div>
+
+                {/* Image Alt Text */}
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Image Alt Text</label>
+                  <input 
+                    type="text" 
+                    placeholder="Description of product image views"
+                    value={productForm.seo?.imageAlt || ''} 
+                    onChange={(e) => setProductForm(prev => ({ 
+                      ...prev, 
+                      seo: { ...prev.seo, imageAlt: e.target.value } 
+                    }))}
+                    className="py-2 px-3 border border-gray-250 dark:border-zinc-850 rounded bg-transparent dark:text-gray-100 focus:outline-none focus:border-primary text-xs" 
+                  />
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          <button 
+            type="submit"
                 className="bg-primary hover:bg-primary-hover text-white py-3.5 font-bold uppercase tracking-wider text-xs rounded mt-2 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Save size={14} /> Save Design Modifications

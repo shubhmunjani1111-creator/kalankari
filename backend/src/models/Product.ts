@@ -20,6 +20,13 @@ const ProductSchema = new Schema({
   isNewArrival: { type: Boolean, default: true },
   isFeatured: { type: Boolean, default: false },
   isFeaturedProduct: { type: Boolean, default: false },
+  seo: {
+    metaTitle: { type: String },
+    metaDescription: { type: String },
+    keywords: [{ type: String }],
+    slug: { type: String, unique: true, sparse: true, index: true },
+    imageAlt: { type: String }
+  },
   description: { type: String, required: true },
   careInstructions: { type: String, default: 'Dry clean only. Gentle machine wash inside out.' },
   stockCount: { type: Number, default: 50 },

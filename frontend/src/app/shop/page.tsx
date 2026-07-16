@@ -50,7 +50,6 @@ function ShopContent() {
   // Array states for multi-select
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
   
@@ -66,9 +65,6 @@ function ShopContent() {
     
     const fabs = searchParams.get('fabrics');
     setSelectedFabrics(fabs ? fabs.split(',') : []);
-    
-    const cols = searchParams.get('colors');
-    setSelectedColors(cols ? cols.split(',') : []);
     
     const szs = searchParams.get('sizes');
     setSelectedSizes(szs ? szs.split(',') : []);
@@ -110,22 +106,10 @@ function ShopContent() {
     return Array.from(set).sort();
   }, [dbProducts]);
 
-  const colors = useMemo(() => {
-    const set = new Set<string>();
-    dbProducts.forEach(p => {
-      if (p.color) {
-        const cleanCol = p.color.trim();
-        if (cleanCol) set.add(cleanCol);
-      }
-    });
-    return Array.from(set).sort();
-  }, [dbProducts]);
-
   // Helper to push updates to URL
   const updateUrl = (
     newColls: string[],
     newFabrics: string[],
-    newColors: string[],
     newSizes: string[],
     newPriceRanges: string[],
     newSort: string = sortBy
@@ -134,7 +118,6 @@ function ShopContent() {
     if (search) params.set('search', search);
     if (newColls.length > 0) params.set('collections', newColls.join(','));
     if (newFabrics.length > 0) params.set('fabrics', newFabrics.join(','));
-    if (newColors.length > 0) params.set('colors', newColors.join(','));
     if (newSizes.length > 0) params.set('sizes', newSizes.join(','));
     if (newPriceRanges.length > 0) params.set('priceRanges', newPriceRanges.join(','));
     if (newSort !== "popularity") params.set('sortBy', newSort);
@@ -166,9 +149,7 @@ function ShopContent() {
       filtered = filtered.filter(p => p.fabric && selectedFabrics.includes(p.fabric.trim()));
     }
 
-    if (selectedColors.length > 0) {
-      filtered = filtered.filter(p => p.color && selectedColors.includes(p.color.trim()));
-    }
+
 
     if (selectedSizes.length > 0) {
       filtered = filtered.filter(p => p.size && p.size.some((s: string) => selectedSizes.includes(s)));
@@ -195,35 +176,33 @@ function ShopContent() {
     }
 
     setProducts(filtered);
-  }, [search, selectedCollections, selectedFabrics, selectedColors, selectedSizes, selectedPriceRanges, sortBy, dbProducts]);
+  }, [search, selectedCollections, selectedFabrics, selectedSizes, selectedPriceRanges, sortBy, dbProducts]);
 
   const clearFilters = () => {
     setSearch("");
     setSelectedCollections([]);
     setSelectedFabrics([]);
-    setSelectedColors([]);
     setSelectedSizes([]);
     setSelectedPriceRanges([]);
     router.push('/shop', { scroll: false });
   };
 
-  const handleCheckboxToggle = (val: string, list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, type: 'collections' | 'fabrics' | 'colors' | 'sizes' | 'priceRanges') => {
+  const handleCheckboxToggle = (val: string, list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, type: 'collections' | 'fabrics' | 'sizes' | 'priceRanges') => {
     const next = list.includes(val) ? list.filter(item => item !== val) : [...list, val];
     setList(next);
     
     // Trigger URL sync
-    if (type === 'collections') updateUrl(next, selectedFabrics, selectedColors, selectedSizes, selectedPriceRanges);
-    if (type === 'fabrics') updateUrl(selectedCollections, next, selectedColors, selectedSizes, selectedPriceRanges);
-    if (type === 'colors') updateUrl(selectedCollections, selectedFabrics, next, selectedSizes, selectedPriceRanges);
-    if (type === 'sizes') updateUrl(selectedCollections, selectedFabrics, selectedColors, next, selectedPriceRanges);
-    if (type === 'priceRanges') updateUrl(selectedCollections, selectedFabrics, selectedColors, selectedSizes, next);
+    if (type === 'collections') updateUrl(next, selectedFabrics, selectedSizes, selectedPriceRanges);
+    if (type === 'fabrics') updateUrl(selectedCollections, next, selectedSizes, selectedPriceRanges);
+    if (type === 'sizes') updateUrl(selectedCollections, selectedFabrics, next, selectedPriceRanges);
+    if (type === 'priceRanges') updateUrl(selectedCollections, selectedFabrics, selectedSizes, next);
   };
 
   const SidebarContent = () => (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between border-b pb-4">
         <h3 className="font-headings font-bold text-lg text-gray-800 dark:text-gray-150">Filters</h3>
-        {(search || selectedCollections.length > 0 || selectedFabrics.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedPriceRanges.length > 0) && (
+        {(search || selectedCollections.length > 0 || selectedFabrics.length > 0 || selectedSizes.length > 0 || selectedPriceRanges.length > 0) && (
           <button 
             onClick={clearFilters} 
             className="text-[10px] uppercase font-bold tracking-wider text-primary dark:text-secondary hover:underline"
@@ -271,25 +250,7 @@ function ShopContent() {
         </div>
       )}
 
-      {/* Color Filter */}
-      {colors.length > 0 && (
-        <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Colour</h4>
-          <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400 max-h-48 overflow-y-auto pr-1">
-            {colors.map(col => (
-              <label key={col} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
-                <input 
-                  type="checkbox" 
-                  checked={selectedColors.includes(col)}
-                  onChange={() => handleCheckboxToggle(col, selectedColors, setSelectedColors, 'colors')}
-                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
-                />
-                <span className="capitalize">{col}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Size Filter */}
       <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
@@ -376,7 +337,7 @@ function ShopContent() {
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value);
-                    updateUrl(selectedCollections, selectedFabrics, selectedColors, selectedSizes, selectedPriceRanges, e.target.value);
+                    updateUrl(selectedCollections, selectedFabrics, selectedSizes, selectedPriceRanges, e.target.value);
                   }}
                   className="bg-transparent dark:bg-[#121111] border border-gray-200 dark:border-zinc-850 rounded py-2 px-3 text-xs outline-none font-semibold text-gray-700 dark:text-gray-300 focus:border-primary"
                 >
@@ -390,7 +351,7 @@ function ShopContent() {
           </div>
 
           {/* Results feedback with Active Filter Tags */}
-          {(search || selectedCollections.length > 0 || selectedFabrics.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedPriceRanges.length > 0) && (
+          {(search || selectedCollections.length > 0 || selectedFabrics.length > 0 || selectedSizes.length > 0 || selectedPriceRanges.length > 0) && (
             <div className="mb-6 text-left text-xs text-gray-500 flex flex-wrap gap-2 items-center">
               <span>Active filters:</span>
               {search && (
@@ -411,12 +372,7 @@ function ShopContent() {
                   <button onClick={() => handleCheckboxToggle(fab, selectedFabrics, setSelectedFabrics, 'fabrics')} className="hover:text-red-500 font-bold ml-1">&times;</button>
                 </span>
               ))}
-              {selectedColors.map(col => (
-                <span key={col} className="bg-gray-100 dark:bg-zinc-900 border border-gray-150 dark:border-zinc-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded flex items-center gap-1.5 font-semibold">
-                  Colour: {col}
-                  <button onClick={() => handleCheckboxToggle(col, selectedColors, setSelectedColors, 'colors')} className="hover:text-red-500 font-bold ml-1">&times;</button>
-                </span>
-              ))}
+
               {selectedSizes.map(sz => (
                 <span key={sz} className="bg-gray-100 dark:bg-zinc-900 border border-gray-150 dark:border-zinc-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded flex items-center gap-1.5 font-semibold">
                   Size: {sz}

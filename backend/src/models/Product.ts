@@ -27,6 +27,7 @@ const ProductSchema = new Schema({
     slug: { type: String, unique: true, sparse: true, index: true },
     imageAlt: { type: String }
   },
+  variantGroupId: { type: String, index: true },
   description: { type: String, required: true },
   careInstructions: { type: String, default: 'Dry clean only. Gentle machine wash inside out.' },
   stockCount: { type: Number, default: 50 },

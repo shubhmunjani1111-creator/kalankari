@@ -67,7 +67,19 @@ export const getProductById = async (req: Request, res: Response) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    res.json(product);
+
+    const productObj = product.toObject() as any;
+
+    if (product.variantGroupId) {
+      const siblings = await Product.find({ 
+        variantGroupId: product.variantGroupId 
+      }).select('_id name color price images seo.slug stockCount');
+      productObj.colorVariants = siblings;
+    } else {
+      productObj.colorVariants = [];
+    }
+
+    res.json(productObj);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -288,6 +300,46 @@ export const addProductReview = async (req: any, res: Response) => {
     });
   } catch (err: any) {
     console.error("Add review controller error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const mergeColorVariants = async (req: Request, res: Response) => {
+  try {
+    const { productIds } = req.body;
+    if (!productIds || !Array.isArray(productIds) || productIds.length < 2) {
+      return res.status(400).json({ error: 'Please select at least 2 products to merge.' });
+    }
+    
+    // Check if products exist
+    const products = await Product.find({ _id: { $in: productIds } });
+    if (products.length !== productIds.length) {
+      return res.status(400).json({ error: 'One or more selected products do not exist.' });
+    }
+
+    const generatedGroupId = new mongoose.Types.ObjectId().toString();
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $set: { variantGroupId: generatedGroupId } }
+    );
+    res.json({ message: 'Products merged into color variant group successfully.', variantGroupId: generatedGroupId });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const unmergeColorVariants = async (req: Request, res: Response) => {
+  try {
+    const { productIds } = req.body;
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ error: 'No products selected.' });
+    }
+    await Product.updateMany(
+      { _id: { $in: productIds } },
+      { $unset: { variantGroupId: "" } }
+    );
+    res.json({ message: 'Products unmerged from variant group successfully.' });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 };

@@ -169,7 +169,7 @@ export default function TrackPage() {
                 <div className="bg-gray-50 border border-gray-200 p-4 rounded mb-6 flex flex-col sm:flex-row justify-between gap-4 text-xs">
                   <div>
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Courier Partner</span>
-                    <strong className="text-gray-800 text-sm block mt-0.5">{order.courierName || 'Delhivery Express'}</strong>
+                    <strong className="text-gray-800 text-sm block mt-0.5">{order.courierName || 'Express Courier'}</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Tracking AWB</span>

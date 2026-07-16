@@ -106,7 +106,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const taxableAmount = Math.max(0, subtotal - discount);
   const tax = 0;
   
-  const shipping = subtotal > 1499 || subtotal === 0 ? 0 : 99;
+  const shipping = 0;
   const grandTotal = taxableAmount + shipping;
 
   return (

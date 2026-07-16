@@ -27,7 +27,7 @@ export default function FAQ() {
         },
         {
           q: "How can I track my shipment?",
-          a: "Once your order is processed from our Surat hub, you will receive an email and SMS containing the tracking ID and carrier link (Delhivery, BlueDart, or DTDC) to monitor shipment updates live."
+          a: "Once your order is processed from our Surat hub, you will receive an email containing the tracking ID and carrier link (BlueDart, DTDC, or other courier partners) to monitor shipment updates live."
         }
       ]
     },

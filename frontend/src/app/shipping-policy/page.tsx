@@ -9,7 +9,7 @@ export default function ShippingPolicy() {
       <div className="space-y-6 text-sm leading-relaxed">
         <section>
           <h2 className="font-headings font-bold text-lg text-gray-800 dark:text-white mb-2.5">1. Shipping Charges</h2>
-          <p>We offer <strong>Free Shipping</strong> throughout India on all prepaid and Cash on Delivery (COD) orders above ₹1,499. For orders below ₹1,499, a standard shipping fee of ₹99 is applicable at checkout.</p>
+          <p>We offer <strong>Free Shipping</strong> throughout India on all prepaid and Cash on Delivery (COD) orders. There are no shipping charges, delivery surcharges, or minimum order thresholds.</p>
         </section>
 
         <section>
@@ -24,7 +24,7 @@ export default function ShippingPolicy() {
 
         <section>
           <h2 className="font-headings font-bold text-lg text-gray-800 dark:text-white mb-2.5">3. Shipping Partners & Tracking</h2>
-          <p>We partner with reliable courier services (such as Delhivery, Blue Dart, ExpressBees) to ship your orders. Once your order has been dispatched, you will receive a tracking link via email to monitor your package on our <a href="/track" className="text-primary hover:underline font-semibold">Track Shipment</a> page.</p>
+          <p>We partner with reliable courier services (such as Blue Dart, ExpressBees) to ship your orders. Once your order has been dispatched, you will receive a tracking link via email to monitor your package on our <a href="/track" className="text-primary hover:underline font-semibold">Track Shipment</a> page.</p>
         </section>
 
         <section>

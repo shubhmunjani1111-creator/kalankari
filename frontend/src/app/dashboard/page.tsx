@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   User, LogOut, Package, Star, Calendar, MapPin, Truck, 
-  LayoutDashboard, Plus, Trash2, Edit3, AlertTriangle, 
+  LayoutDashboard, Plus, Trash2, Edit3, AlertTriangle, Layers, Search, 
   TrendingUp, Users, ShoppingBag, ListOrdered, Check, Save, FileText, X, Mail,
   MessageSquare, Lock, Eye, EyeOff, ShieldCheck, Key, Phone
 } from 'lucide-react';
@@ -16,8 +16,7 @@ export default function Dashboard() {
   const { user, token, isAuthenticated, login, logout } = useAuth();
   const router = useRouter();
 
-  // Tab State
-  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'orders' | 'profile' | 'support'>('profile');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'variants' | 'orders' | 'profile' | 'support'>('profile');
 
   // Email Logs States
 
@@ -37,6 +36,9 @@ export default function Dashboard() {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [filterFeatured, setFilterFeatured] = useState<'all' | 'featured'>('all');
+
+  const [selectedProductIdsForMerge, setSelectedProductIdsForMerge] = useState<string[]>([]);
+  const [variantSearch, setVariantSearch] = useState("");
 
   // Modals & UI States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -221,7 +223,7 @@ export default function Dashboard() {
       fetchAnalytics();
     } else if (activeTab === 'orders') {
       fetchAdminOrders();
-    } else if (activeTab === 'catalog' || activeTab === 'stocks') {
+    } else if (activeTab === 'catalog' || activeTab === 'stocks' || activeTab === 'variants') {
       fetchCatalogProducts();
 
     } else if (activeTab === 'support') {
@@ -269,6 +271,56 @@ export default function Dashboard() {
       console.error("Fetch catalog error:", err);
     } finally {
       setLoadingProducts(false);
+    }
+  };
+
+  const handleMergeVariants = async () => {
+    if (selectedProductIdsForMerge.length < 2) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/products/variants/merge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productIds: selectedProductIdsForMerge })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("Selected products merged into variant group successfully.");
+        setSelectedProductIdsForMerge([]);
+        fetchCatalogProducts();
+      } else {
+        alert(data.error || "Failed to merge color variants.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error while merging variants.");
+    }
+  };
+
+  const handleUnmergeVariants = async () => {
+    if (selectedProductIdsForMerge.length === 0) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/products/variants/unmerge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productIds: selectedProductIdsForMerge })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("Selected products unmerged from variant group.");
+        setSelectedProductIdsForMerge([]);
+        fetchCatalogProducts();
+      } else {
+        alert(data.error || "Failed to unmerge variants.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error while unmerging variants.");
     }
   };
 
@@ -753,12 +805,13 @@ export default function Dashboard() {
     }
   };
 
-  // Helper size select
   const toggleSizeSelection = (sizeLabel: string) => {
     setProductForm(prev => {
       const sizes = prev.size.includes(sizeLabel) 
         ? prev.size.filter(s => s !== sizeLabel)
         : [...prev.size, sizeLabel];
+      const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL'];
+      sizes.sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
       return { ...prev, size: sizes };
     });
   };
@@ -768,6 +821,16 @@ export default function Dashboard() {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(""), 4000);
   };
+
+  const filteredVariantProducts = products.filter(p => {
+    if (!variantSearch.trim()) return true;
+    const term = variantSearch.toLowerCase().trim();
+    return (
+      (p.name || '').toLowerCase().includes(term) ||
+      (p.color || '').toLowerCase().includes(term) ||
+      (p._id || p.id || '').toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full min-h-screen text-left">
@@ -818,6 +881,12 @@ export default function Dashboard() {
             className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'stocks' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
           >
             <AlertTriangle size={14} /> Stock Alerts
+          </button>
+          <button 
+            onClick={() => setActiveTab('variants')}
+            className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'variants' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
+          >
+            <Layers size={14} /> Merge Color Variants
           </button>
           <button 
             onClick={() => setActiveTab('orders')}
@@ -1146,6 +1215,146 @@ export default function Dashboard() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* TAB FOR COLOR VARIANTS */}
+      {isAdmin && activeTab === 'variants' && (
+        <div className="flex flex-col gap-6 w-full text-left">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm">
+            <div>
+              <h2 className="font-headings text-xl font-bold text-gray-800 dark:text-white">Merge Colour Variants</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select multiple products of the same design in different colours and group them together. They will render as selectable color options on the customer detail page.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleMergeVariants}
+                disabled={selectedProductIdsForMerge.length < 2}
+                className="bg-primary hover:bg-primary-hover disabled:bg-zinc-400 text-white font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded shadow-sm transition-colors flex items-center gap-1.5 font-semibold"
+              >
+                Merge Selected ({selectedProductIdsForMerge.length})
+              </button>
+              <button
+                onClick={handleUnmergeVariants}
+                disabled={selectedProductIdsForMerge.length === 0}
+                className="border border-gray-250 dark:border-zinc-800 hover:border-red-500 hover:text-red-500 text-gray-500 font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded transition-all flex items-center gap-1.5 font-semibold"
+              >
+                Unmerge Selected
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm p-6">
+            {/* Search filter for variants */}
+            <div className="mb-4 relative max-w-sm">
+              <input
+                type="text"
+                placeholder="Filter by product name, colour, SKU..."
+                value={variantSearch}
+                onChange={(e) => setVariantSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-zinc-850 rounded text-xs bg-transparent dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-400"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={13} />
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-zinc-900 text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredVariantProducts.length > 0 && selectedProductIdsForMerge.length === filteredVariantProducts.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProductIdsForMerge(filteredVariantProducts.map(p => p._id || p.id));
+                          } else {
+                            setSelectedProductIdsForMerge([]);
+                          }
+                        }}
+                        className="rounded border-gray-300 text-primary focus:ring-primary accent-primary"
+                      />
+                    </th>
+                    <th className="py-3 px-4">Product Info</th>
+                    <th className="py-3 px-4">SKU / DB ID</th>
+                    <th className="py-3 px-4">Colour</th>
+                    <th className="py-3 px-4">Price</th>
+                    <th className="py-3 px-4">Inventory</th>
+                    <th className="py-3 px-4 text-center">Variant Group Badge</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-zinc-900">
+                  {filteredVariantProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center text-gray-400 italic">No products found matching your search.</td>
+                    </tr>
+                  ) : (
+                    filteredVariantProducts.map((p) => {
+                      const isChecked = selectedProductIdsForMerge.includes(p._id || p.id);
+                      const imgUrl = p.images?.[0] || "/logo.jpg";
+                      
+                      const getGroupColor = (groupId: string) => {
+                        if (!groupId) return "bg-gray-100 text-gray-500";
+                        let hash = 0;
+                        for (let i = 0; i < groupId.length; i++) {
+                          hash = groupId.charCodeAt(i) + ((hash << 5) - hash);
+                        }
+                        const colors = [
+                          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/40",
+                          "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40",
+                          "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/40",
+                          "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/40",
+                          "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/40",
+                          "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/20 dark:text-pink-400 dark:border-pink-900/40",
+                          "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/40"
+                        ];
+                        return colors[Math.abs(hash) % colors.length];
+                      };
+
+                      return (
+                        <tr key={p._id || p.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-950/20 transition-colors">
+                          <td className="py-3.5 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                const id = p._id || p.id;
+                                setSelectedProductIdsForMerge(prev => 
+                                  prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                                );
+                              }}
+                              className="rounded border-gray-300 text-primary focus:ring-primary accent-primary"
+                            />
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <img src={imgUrl} alt={p.name} className="w-10 h-13 object-cover rounded border border-gray-100" />
+                              <span className="font-semibold text-gray-800 dark:text-gray-200">{p.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-[10px] text-gray-400">{p._id || p.id}</td>
+                          <td className="py-3.5 px-4 font-bold capitalize text-gray-700 dark:text-gray-300">{p.color || "N/A"}</td>
+                          <td className="py-3.5 px-4 font-bold text-primary dark:text-secondary">₹{p.price.toLocaleString()}</td>
+                          <td className="py-3.5 px-4 font-semibold text-gray-500">{p.stockCount} in stock</td>
+                          <td className="py-3.5 px-4 text-center">
+                            {p.variantGroupId ? (
+                              <span className={`px-2.5 py-1 text-[9px] uppercase font-bold rounded border shadow-sm ${getGroupColor(p.variantGroupId)}`}>
+                                Group: {p.variantGroupId.substring(p.variantGroupId.length - 6)}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-[9px] font-bold text-gray-400 bg-gray-50 dark:bg-zinc-900 border border-gray-150 dark:border-zinc-850 rounded">
+                                Unlinked
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

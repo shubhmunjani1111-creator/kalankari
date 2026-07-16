@@ -18,7 +18,7 @@ import {
   forgotPasswordReset
 } from './controllers/authController';
 import { submitContactMessage, getMessagesAdmin, replyToMessageAdmin, deleteMessageAdmin, markMessageReadAdmin } from './controllers/messageController';
-import { getProducts, getProductById, createProduct, deleteProduct, adjustStock, getSearchSuggestions, updateProduct, addProductReview } from './controllers/productController';
+import { getProducts, getProductById, createProduct, deleteProduct, adjustStock, getSearchSuggestions, updateProduct, addProductReview, mergeColorVariants, unmergeColorVariants } from './controllers/productController';
 import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrdersAdmin, generateGSTInvoice, retryOrderPayment, getAdminStats, deleteOrderAdmin } from './controllers/orderController';
 import { createRazorpayOrder, verifyRazorpayPayment, razorpayWebhook } from './controllers/paymentController';
 import { authenticateToken, requireAdmin, optionalAuthenticate } from './middleware/auth';
@@ -72,6 +72,8 @@ app.post('/api/auth/forgot-password-reset', forgotPasswordReset);
 // Products Routes
 app.get('/api/products', getProducts);
 app.get('/api/products/search/suggestions', getSearchSuggestions);
+app.post('/api/products/variants/merge', authenticateToken, requireAdmin, mergeColorVariants);
+app.post('/api/products/variants/unmerge', authenticateToken, requireAdmin, unmergeColorVariants);
 app.get('/api/products/:id', getProductById);
 app.post('/api/products', authenticateToken, requireAdmin, createProduct);
 app.put('/api/products/:id', authenticateToken, requireAdmin, updateProduct);

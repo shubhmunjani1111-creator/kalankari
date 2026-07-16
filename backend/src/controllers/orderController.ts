@@ -24,7 +24,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     const timeline = [
       { label: 'Ordered', date: dateStr, desc: 'Order details accepted, awaiting shipping', active: true },
-      { label: 'Packed & Dispatched', date: '', desc: 'Order packed and sent through Delhivery Courier service', active: false },
+      { label: 'Packed & Dispatched', date: '', desc: 'Order packed and sent through courier service', active: false },
       { label: 'Out for Delivery', date: '', desc: 'Awaiting pickup from local hub dispatcher', active: false },
       { label: 'Delivered', date: '', desc: 'Awaiting final confirmation from courier agent', active: false }
     ];

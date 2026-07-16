@@ -38,6 +38,10 @@ export default function ProductDetailClient({ params }: { params: any }) {
       const res = await fetch(`${API_BASE_URL}/api/products/${id}`);
       const data = await res.json();
       if (res.ok) {
+        if (data.size && Array.isArray(data.size)) {
+          const SIZE_ORDER = ['S', 'M', 'L', 'XL', 'XXL'];
+          data.size.sort((a: string, b: string) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+        }
         setProduct(data);
         setSelectedSize(data.size[0] || "M");
 
@@ -268,6 +272,33 @@ export default function ProductDetailClient({ params }: { params: any }) {
           </div>
 
           <p className="text-sm text-gray-500 dark:text-gray-300 leading-relaxed font-normal">{product.description}</p>
+
+          {/* Color Variants Selector */}
+          {product.colorVariants && product.colorVariants.length > 1 && (
+            <div className="mb-6 text-left">
+              <span className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300">Available Colours</span>
+              <div className="flex flex-wrap gap-2.5 mt-2">
+                {product.colorVariants.map((variant: any) => {
+                  const isSelected = variant._id === product._id;
+                  const variantImg = variant.images?.[0] || "/logo.jpg";
+                  return (
+                    <Link
+                      key={variant._id}
+                      href={`/shop/${variant.seo?.slug || variant._id}`}
+                      className={`group flex items-center gap-2 p-1.5 rounded-full border transition-all ${isSelected ? 'border-primary bg-primary/5 dark:bg-zinc-900 shadow-sm' : 'border-gray-250 dark:border-zinc-800 hover:border-primary bg-white dark:bg-black'}`}
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 dark:border-zinc-850">
+                        <img src={variantImg} alt={variant.color} className="w-full h-full object-cover" />
+                      </div>
+                      <span className={`text-[10px] pr-2.5 font-bold uppercase tracking-wider ${isSelected ? 'text-primary' : 'text-gray-500 dark:text-gray-400 group-hover:text-primary'}`}>
+                        {variant.color}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Size Selector */}
           <div>

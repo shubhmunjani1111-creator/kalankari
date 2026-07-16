@@ -145,11 +145,7 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {shipping > 0 && (
-                  <p className="text-[9px] text-gray-400 leading-snug">
-                    Add ₹{(1500 - subtotal).toLocaleString()} more to your cart to qualify for **Free Shipping**!
-                  </p>
-                )}
+
                 
                 <div className="border-t border-gray-100 dark:border-zinc-900 pt-4 flex justify-between text-xs text-gray-850 dark:text-white font-bold">
                   <span className="text-sm">Grand Total</span>

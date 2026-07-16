@@ -68,7 +68,7 @@ export const Navbar: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const announcements = [
-    "Free Shipping on Orders Above ₹1,499!",
+    "Free Delivery on All Orders!",
     "New Festive Silk Collection is now Live!",
     "Easy Sizing & Design Exchanges within 7 Days!"
   ];

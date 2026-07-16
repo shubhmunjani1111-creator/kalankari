@@ -476,7 +476,7 @@ export class EmailService {
       <p>Excited news! Your digital printed kurti design order <strong>#${order._id || order.id}</strong> has been successfully dispatched from our shipping hub in Surat.</p>
       
       <div class="summary-card">
-        <div class="summary-row"><span>Courier Partner</span> <strong>${order.courierName || 'Delhivery Express'}</strong></div>
+        <div class="summary-row"><span>Courier Partner</span> <strong>${order.courierName || 'Express Courier'}</strong></div>
         <div class="summary-row"><span>Tracking AWB Number</span> <strong>${order.trackingNumber || 'AWB9876543210'}</strong></div>
       </div>
 

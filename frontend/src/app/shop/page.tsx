@@ -199,8 +199,8 @@ function ShopContent() {
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b pb-4">
+    <div className="flex flex-col gap-5 h-full max-h-[calc(100vh-10rem)]">
+      <div className="flex items-center justify-between border-b pb-4 flex-shrink-0">
         <h3 className="font-headings font-bold text-lg text-gray-800 dark:text-gray-150">Filters</h3>
         {(search || selectedCollections.length > 0 || selectedFabrics.length > 0 || selectedSizes.length > 0 || selectedPriceRanges.length > 0) && (
           <button 
@@ -212,79 +212,80 @@ function ShopContent() {
         )}
       </div>
 
-      {/* Collection Filter */}
-      <div className="text-left">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Collections</h4>
-        <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
-          {collections.map(coll => (
-            <label key={coll} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
-              <input 
-                type="checkbox" 
-                checked={selectedCollections.includes(coll)}
-                onChange={() => handleCheckboxToggle(coll, selectedCollections, setSelectedCollections, 'collections')}
-                className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
-              />
-              <span>{coll}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Fabric/Material Filter */}
-      {fabrics.length > 0 && (
-        <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Fabric</h4>
-          <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto pr-1">
-            {fabrics.map(fab => (
-              <label key={fab} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
+      {/* Scrollable filters list wrapper */}
+      <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-6 scrollbar-thin">
+        {/* Collection Filter */}
+        <div className="text-left">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Collections</h4>
+          <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
+            {collections.map(coll => (
+              <label key={coll} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
                 <input 
                   type="checkbox" 
-                  checked={selectedFabrics.includes(fab)}
-                  onChange={() => handleCheckboxToggle(fab, selectedFabrics, setSelectedFabrics, 'fabrics')}
+                  checked={selectedCollections.includes(coll)}
+                  onChange={() => handleCheckboxToggle(coll, selectedCollections, setSelectedCollections, 'collections')}
                   className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
                 />
-                <span>{fab}</span>
+                <span>{coll}</span>
               </label>
             ))}
           </div>
         </div>
-      )}
 
+        {/* Fabric/Material Filter */}
+        {fabrics.length > 0 && (
+          <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Fabric</h4>
+            <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
+              {fabrics.map(fab => (
+                <label key={fab} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedFabrics.includes(fab)}
+                    onChange={() => handleCheckboxToggle(fab, selectedFabrics, setSelectedFabrics, 'fabrics')}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
+                  />
+                  <span>{fab}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
-
-      {/* Size Filter */}
-      <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Sizes</h4>
-        <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
-          {sizes.map(sz => (
-            <label key={sz} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
-              <input 
-                type="checkbox" 
-                checked={selectedSizes.includes(sz)}
-                onChange={() => handleCheckboxToggle(sz, selectedSizes, setSelectedSizes, 'sizes')}
-                className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
-              />
-              <span>Size {sz}</span>
-            </label>
-          ))}
+        {/* Size Filter */}
+        <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Sizes</h4>
+          <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
+            {sizes.map(sz => (
+              <label key={sz} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={selectedSizes.includes(sz)}
+                  onChange={() => handleCheckboxToggle(sz, selectedSizes, setSelectedSizes, 'sizes')}
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
+                />
+                <span>Size {sz}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Price Ranges Filter */}
-      <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Price</h4>
-        <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
-          {priceRanges.map(pr => (
-            <label key={pr.label} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
-              <input 
-                type="checkbox" 
-                checked={selectedPriceRanges.includes(pr.label)}
-                onChange={() => handleCheckboxToggle(pr.label, selectedPriceRanges, setSelectedPriceRanges, 'priceRanges')}
-                className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
-              />
-              <span>{pr.label}</span>
-            </label>
-          ))}
+        {/* Price Ranges Filter */}
+        <div className="text-left border-t border-gray-50 dark:border-zinc-900 pt-5">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">Price</h4>
+          <div className="flex flex-col gap-2.5 text-xs text-gray-500 dark:text-gray-400">
+            {priceRanges.map(pr => (
+              <label key={pr.label} className="flex items-center gap-2.5 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={selectedPriceRanges.includes(pr.label)}
+                  onChange={() => handleCheckboxToggle(pr.label, selectedPriceRanges, setSelectedPriceRanges, 'priceRanges')}
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-primary focus:ring-primary accent-primary" 
+                />
+                <span>{pr.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -295,7 +296,7 @@ function ShopContent() {
       <div className="flex gap-8 items-start relative w-full">
         
         {/* Desktop Sidebar Filters */}
-        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm sticky top-24">
+        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm sticky top-24 max-h-[calc(100vh-8rem)] overflow-hidden">
           <SidebarContent />
         </aside>
 

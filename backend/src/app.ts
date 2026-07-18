@@ -9,6 +9,7 @@ import {
   googleOAuthMock,
   getAllCustomersAdmin,
   toggleCustomerStatus,
+  getCustomerProfileAdmin,
   requestEmailOTP,
   confirmEmailOTP,
   requestMobileOTP,
@@ -18,7 +19,8 @@ import {
   forgotPasswordReset
 } from './controllers/authController';
 import { submitContactMessage, getMessagesAdmin, replyToMessageAdmin, deleteMessageAdmin, markMessageReadAdmin } from './controllers/messageController';
-import { getProducts, getProductById, createProduct, deleteProduct, adjustStock, getSearchSuggestions, updateProduct, addProductReview, mergeColorVariants, unmergeColorVariants } from './controllers/productController';
+import { getProducts, getProductById, createProduct, deleteProduct, adjustStock, getSearchSuggestions, updateProduct, mergeColorVariants, unmergeColorVariants } from './controllers/productController';
+import { getProductReviews, submitProductReview, editProductReview, deleteProductReview, getAllReviewsAdmin, updateReviewStatusAdmin, toggleReviewFeatureAdmin, editReviewAdmin, deleteReviewAdmin, getHomepageReviews, getHomepageReviewsAdmin, updateHomepageReviewsAdmin, getMyReviewForProduct } from './controllers/reviewController';
 import { createOrder, getMyOrders, getOrderById, updateOrderStatus, getAllOrdersAdmin, generateGSTInvoice, retryOrderPayment, getAdminStats, deleteOrderAdmin } from './controllers/orderController';
 import { createRazorpayOrder, verifyRazorpayPayment, razorpayWebhook } from './controllers/paymentController';
 import { authenticateToken, requireAdmin, optionalAuthenticate } from './middleware/auth';
@@ -79,7 +81,23 @@ app.post('/api/products', authenticateToken, requireAdmin, createProduct);
 app.put('/api/products/:id', authenticateToken, requireAdmin, updateProduct);
 app.delete('/api/products/:id', authenticateToken, requireAdmin, deleteProduct);
 app.patch('/api/products/:id/stock', authenticateToken, requireAdmin, adjustStock);
-app.post('/api/products/:id/reviews', authenticateToken, addProductReview);
+
+// Public Homepage & Product Reviews Routes
+app.get('/api/products/:id/reviews', getProductReviews);
+app.post('/api/products/:id/reviews', authenticateToken, submitProductReview);
+app.put('/api/reviews/:id', authenticateToken, editProductReview);
+app.delete('/api/reviews/:id', authenticateToken, deleteProductReview);
+app.get('/api/reviews/my-review', authenticateToken, getMyReviewForProduct);
+app.get('/api/homepage-reviews', getHomepageReviews);
+
+// Admin Reviews Moderation Routes
+app.get('/api/admin/reviews', authenticateToken, requireAdmin, getAllReviewsAdmin);
+app.patch('/api/admin/reviews/:id/status', authenticateToken, requireAdmin, updateReviewStatusAdmin);
+app.patch('/api/admin/reviews/:id/feature', authenticateToken, requireAdmin, toggleReviewFeatureAdmin);
+app.put('/api/admin/reviews/:id', authenticateToken, requireAdmin, editReviewAdmin);
+app.delete('/api/admin/reviews/:id', authenticateToken, requireAdmin, deleteReviewAdmin);
+app.get('/api/admin/homepage-reviews', authenticateToken, requireAdmin, getHomepageReviewsAdmin);
+app.put('/api/admin/homepage-reviews', authenticateToken, requireAdmin, updateHomepageReviewsAdmin);
 
 // Orders Routes
 app.post('/api/orders', optionalAuthenticate, createOrder);
@@ -106,6 +124,7 @@ app.delete('/api/admin/messages/:id', authenticateToken, requireAdmin, deleteMes
 
 // Admin Customer Management Routes
 app.get('/api/admin/customers', authenticateToken, requireAdmin, getAllCustomersAdmin);
+app.get('/api/admin/customers/:id', authenticateToken, requireAdmin, getCustomerProfileAdmin);
 app.patch('/api/admin/customers/:id/status', authenticateToken, requireAdmin, toggleCustomerStatus);
 app.post('/api/admin/upload', authenticateToken, requireAdmin, uploadToCloudinary);
 app.get('/api/admin/migrate-images', uploadLocalImagesToCloudinary);

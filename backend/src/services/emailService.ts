@@ -396,7 +396,7 @@ export class EmailService {
 
       <div class="summary-card">
         <h4 style="margin-top: 0; color: #8B4513; border-bottom: 1px solid #C49A6C; padding-bottom: 5px;">Order Details</h4>
-        <div class="summary-row"><span>Order Reference</span> <strong>#${order._id || order.id}</strong></div>
+        <div class="summary-row"><span>Order Number</span> <strong>#${order.orderNumber || order._id || order.id}</strong></div>
         <div class="summary-row"><span>Customer Name</span> <span>${order.shippingAddress?.name || 'Customer'}</span></div>
         <div class="summary-row"><span>Email</span> <span>${order.shippingAddress?.email || 'N/A'}</span></div>
         <div class="summary-row"><span>Mobile</span> <span>${order.shippingAddress?.phone || 'N/A'}</span></div>
@@ -455,7 +455,7 @@ export class EmailService {
       </table>
 
       <div class="summary-card">
-        <div class="summary-row"><span>Order ID</span> <strong>#${order._id || order.id}</strong></div>
+        <div class="summary-row"><span>Order Number</span> <strong>#${order.orderNumber || order._id || order.id}</strong></div>
         <div class="summary-row"><span>Estimated Delivery</span> <span>${estDelivery}</span></div>
         <div class="summary-row"><span>Delivery Address</span> <span>${order.shippingAddress?.street}, ${order.shippingAddress?.city} - ${order.shippingAddress?.pin || order.shippingAddress?.pincode}</span></div>
         <div class="summary-row total"><span>Total Amount Paid</span> <span>₹${order.payable.toLocaleString()}</span></div>
@@ -473,7 +473,7 @@ export class EmailService {
     const html = `
       <div class="title">Your Order is on the Way 🚚</div>
       <p>Hi ${order.shippingAddress?.name || 'Valued Customer'},</p>
-      <p>Excited news! Your digital printed kurti design order <strong>#${order._id || order.id}</strong> has been successfully dispatched from our shipping hub in Surat.</p>
+      <p>Excited news! Your digital printed kurti design order <strong>#${order.orderNumber || order._id || order.id}</strong> has been successfully dispatched from our shipping hub in Surat.</p>
       
       <div class="summary-card">
         <div class="summary-row"><span>Courier Partner</span> <strong>${order.courierName || 'Express Courier'}</strong></div>
@@ -491,7 +491,7 @@ export class EmailService {
     const html = `
       <div class="title">Your Order has been Delivered ❤️</div>
       <p>Hi ${order.shippingAddress?.name || 'Valued Customer'},</p>
-      <p>Your package carrying order <strong>#${order._id || order.id}</strong> has been successfully delivered to your shipping address!</p>
+      <p>Your package carrying order <strong>#${order.orderNumber || order._id || order.id}</strong> has been successfully delivered to your shipping address!</p>
       <p>We hope you love your new premium digital printed kurtis. We would love to hear your feedback on the fabric feel, prints quality, and silhouette fitting:</p>
       
       <div style="text-align: center;">
@@ -520,12 +520,12 @@ export class EmailService {
 
   public static sendAdminOrderNotification(order: any) {
     const html = this.buildAdminOrderTemplate(order);
-    this.logAndSendEmail(ADMIN_EMAIL, '🛍 New Order Received - Kalankari', 'admin_order', html, { order });
+    this.logAndSendEmail(ADMIN_EMAIL, 'New Order Received - ' + (order.orderNumber || order._id), 'admin_order', html, { order });
   }
 
   public static sendCustomerOrderConfirmation(order: any) {
     const html = this.buildCustomerOrderTemplate(order);
-    this.logAndSendEmail(order.shippingAddress?.email, 'Your Kalankari Order is Confirmed 🎉', 'customer_order', html, { order });
+    this.logAndSendEmail(order.shippingAddress?.email, 'Your Order ' + (order.orderNumber || order._id) + ' has been Confirmed', 'customer_order', html, { order });
   }
 
   public static sendOrderStatusEmail(order: any) {
@@ -534,11 +534,11 @@ export class EmailService {
     let html = '';
 
     if (order.status === 'Shipped') {
-      subject = 'Your Order is on the Way 🚚';
+      subject = 'Your Order ' + (order.orderNumber || order._id) + ' is on the Way 🚚';
       type = 'status_shipped';
       html = this.buildShippedTemplate(order);
     } else if (order.status === 'Delivered') {
-      subject = 'Your Order has been Delivered ❤️';
+      subject = 'Your Order ' + (order.orderNumber || order._id) + ' has been Delivered ❤️';
       type = 'status_delivered';
       html = this.buildDeliveredTemplate(order);
     } else {
@@ -663,5 +663,44 @@ export class EmailService {
       `
     );
     this.logAndSendEmail(email, 'Password Reset OTP Code | Kalankari', 'forgot_password_otp', html, { otp });
+  }
+
+  public static sendReviewSubmittedNotification(review: any, product: any, user: any) {
+    const html = getBaseTemplate(
+      'New Review Submitted',
+      `
+      <div class="title" style="color: #8B2635;">📝 New Customer Review Submitted</div>
+      <p>A new customer review has been submitted for moderation. Details below:</p>
+      <div style="background-color: #FDFBF7; border: 1px solid #E6DFD5; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #2D2D2D; text-align: left;">
+        <strong>Product Name:</strong> ${product.name}<br/>
+        <strong>Customer Name:</strong> ${user.name} (${user.email})<br/>
+        <strong>Rating:</strong> ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)} (${review.rating}/5)<br/>
+        <strong>Title:</strong> ${review.title || 'N/A'}<br/>
+        <strong>Review Description:</strong><br/>
+        <em>"${review.review}"</em>
+      </div>
+      <p>Please log in to the admin panel to Approve, Reject, or Hide this review.</p>
+      `
+    );
+    this.logAndSendEmail(ADMIN_EMAIL, '📝 New Product Review Submitted - Kalankari', 'admin_review', html, { review });
+  }
+
+  public static sendReviewApprovedNotification(review: any, product: any, user: any) {
+    const html = getBaseTemplate(
+      'Your Review has been Approved!',
+      `
+      <div class="title" style="color: #8B2635;">🎉 Your Review has been Published!</div>
+      <p>Hi ${user.name},</p>
+      <p>Thank you for sharing your feedback. Your review for <strong>${product.name}</strong> has been successfully approved and published on Kalankari!</p>
+      <div style="background-color: #FDFBF7; border: 1px solid #E6DFD5; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #2D2D2D; text-align: left;">
+        <strong>Rating:</strong> ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}<br/>
+        <strong>Title:</strong> ${review.title || 'N/A'}<br/>
+        <strong>Review Text:</strong><br/>
+        <em>"${review.review}"</em>
+      </div>
+      <p>We appreciate you taking the time to share your experience with our premium designs.</p>
+      `
+    );
+    this.logAndSendEmail(user.email, '🎉 Your Kalankari Review is Published!', 'customer_review_approved', html, { review });
   }
 }

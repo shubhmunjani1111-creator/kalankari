@@ -4,6 +4,9 @@ import User from '../models/User';
 import Product from '../models/Product';
 import { AuthRequest } from '../middleware/auth';
 import { EmailService } from '../services/emailService';
+import { getNextOrderNumber } from '../models/Counter';
+import mongoose from 'mongoose';
+import Review from '../models/Review';
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
@@ -31,7 +34,11 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     const userId = req.user ? req.user.id : null;
 
+    const businessYear = new Date().getFullYear();
+    const orderNumber = await getNextOrderNumber(businessYear);
+
     const order = new Order({
+      orderNumber,
       user: userId,
       items,
       subtotal,
@@ -90,7 +97,13 @@ export const getMyOrders = async (req: AuthRequest, res: Response) => {
 
 export const getOrderById = async (req: AuthRequest, res: Response) => {
   try {
-    const order = await Order.findById(req.params.id);
+    let order;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      order = await Order.findById(req.params.id);
+    }
+    if (!order) {
+      order = await Order.findOne({ orderNumber: req.params.id });
+    }
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
     // Allow lookup if they are admin, or if the order matches the user ID,
@@ -264,12 +277,12 @@ export const generateGSTInvoice = async (req: AuthRequest, res: Response) => {
 
           <div class="meta-info">
             <div>
-              <strong>Invoice No:</strong> KLN-${order._id.toString().substring(18).toUpperCase()}<br>
+              <strong>Invoice No:</strong> ${order.orderNumber || 'KLN-' + order._id.toString().substring(18).toUpperCase()}<br>
               <strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString('en-IN')}<br>
               <strong>Payment Mode:</strong> ${order.paymentMethod.toUpperCase()}
             </div>
             <div style="text-align: right;">
-              <strong>Order ID:</strong> #${order._id}<br>
+              <strong>Order Number:</strong> #${order.orderNumber || order._id}<br>
               <strong>Status:</strong> ${order.paymentStatus}<br>
               <strong>Txn Ref:</strong> ${order.razorpayPaymentId || 'N/A'}
             </div>
@@ -401,7 +414,24 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
     const productsCount = await Product.countDocuments();
     const customersCount = await User.countDocuments({ role: 'customer' });
 
+    // Dates for breakdowns
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    // Latest order number
+    const latestOrder = await Order.findOne({ orderNumber: { $exists: true, $ne: '' } }).sort({ createdAt: -1 });
+    const latestOrderNumber = latestOrder ? latestOrder.orderNumber : 'N/A';
+
     let totalSales = 0;
+    let ordersToday = 0;
+    let ordersThisMonth = 0;
+    let ordersThisYear = 0;
+    let revenueToday = 0;
+    let revenueThisMonth = 0;
+    let revenueThisYear = 0;
+
     const salesByDate: { [key: string]: number } = {};
 
     // Seed the last 7 days with zero sales
@@ -413,13 +443,23 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
     }
 
     orders.forEach((order) => {
-      if (order.paymentStatus === 'Completed' || order.status === 'Delivered') {
+      const isCompleted = order.paymentStatus === 'Completed' || order.status === 'Delivered';
+      const orderDate = new Date(order.createdAt);
+
+      if (isCompleted) {
         totalSales += order.payable;
+        if (orderDate >= startOfToday) revenueToday += order.payable;
+        if (orderDate >= startOfMonth) revenueThisMonth += order.payable;
+        if (orderDate >= startOfYear) revenueThisYear += order.payable;
       }
+
+      if (orderDate >= startOfToday) ordersToday++;
+      if (orderDate >= startOfMonth) ordersThisMonth++;
+      if (orderDate >= startOfYear) ordersThisYear++;
       
-      const dateKey = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      const dateKey = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       if (salesByDate[dateKey] !== undefined) {
-        if (order.paymentStatus === 'Completed' || order.status === 'Delivered') {
+        if (isCompleted) {
           salesByDate[dateKey] += order.payable;
         }
       }
@@ -430,12 +470,48 @@ export const getAdminStats = async (req: AuthRequest, res: Response) => {
       sales: salesByDate[date]
     }));
 
+    // Customer statistics
+    const newCustomersToday = await User.countDocuments({ role: 'customer', createdAt: { $gte: startOfToday } });
+    const newCustomersThisMonth = await User.countDocuments({ role: 'customer', createdAt: { $gte: startOfMonth } });
+
+    // Review statistics
+    const totalReviews = await Review.countDocuments();
+    const pendingReviews = await Review.countDocuments({ status: 'Pending' });
+    const approvedReviews = await Review.countDocuments({ status: 'Approved' });
+
+    // Average Product Rating
+    const avgRatingRes = await Product.aggregate([
+      { $group: { _id: null, avg: { $avg: '$rating' } } }
+    ]);
+    const averageProductRating = avgRatingRes.length > 0 ? Number(avgRatingRes[0].avg.toFixed(1)) : 0;
+
+    // Most Reviewed Products
+    const mostReviewedProducts = await Product.find()
+      .sort({ reviewsCount: -1 })
+      .limit(5)
+      .select('name images reviewsCount rating');
+
     res.json({
       totalSales,
       ordersCount: orders.length,
       productsCount,
       customersCount,
-      salesGraphData
+      salesGraphData,
+      // Extended new statistics
+      latestOrderNumber,
+      ordersToday,
+      ordersThisMonth,
+      ordersThisYear,
+      revenueToday,
+      revenueThisMonth,
+      revenueThisYear,
+      newCustomersToday,
+      newCustomersThisMonth,
+      totalReviews,
+      pendingReviews,
+      approvedReviews,
+      averageProductRating,
+      mostReviewedProducts
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

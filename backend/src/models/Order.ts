@@ -44,7 +44,8 @@ const OrderSchema = new Schema({
     requestDate: { type: Date, default: null }
   },
   courierName: { type: String, default: '' },
-  trackingNumber: { type: String, default: '' }
+  trackingNumber: { type: String, default: '' },
+  orderNumber: { type: String, unique: true, sparse: true, index: true }
 }, { timestamps: true });
 
 export default model('Order', OrderSchema);

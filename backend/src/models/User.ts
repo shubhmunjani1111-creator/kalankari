@@ -28,7 +28,10 @@ const UserSchema = new Schema({
     state: { type: String, required: true },
     pin: { type: String, required: true }
   }],
-  wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }]
+  wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
+  emailVerified: { type: Boolean, default: false },
+  phoneVerified: { type: Boolean, default: false },
+  lastLogin: { type: Date, default: null }
 }, { timestamps: true });
 
 export default model('User', UserSchema);

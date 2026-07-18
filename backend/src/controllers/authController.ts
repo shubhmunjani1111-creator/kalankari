@@ -4,7 +4,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import Order from '../models/Order';
+import Review from '../models/Review';
 import { AuthRequest } from '../middleware/auth';
+import mongoose from 'mongoose';
 
 const getJwtSecret = () => process.env.JWT_SECRET || 'kalankari_secret_2026';
 
@@ -72,6 +74,8 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, getJwtSecret(), { expiresIn: '7d' });
+    user.lastLogin = new Date();
+    await user.save();
 
     res.json({
       token,
@@ -198,8 +202,183 @@ export const googleOAuthMock = async (req: Request, res: Response) => {
 
 export const getAllCustomersAdmin = async (req: Request, res: Response) => {
   try {
-    const customers = await User.find({ role: 'customer' }).select('-password');
-    res.json(customers);
+    const { search, filter, page = 1, limit = 10 } = req.query;
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.max(1, Number(limit));
+    const skipNum = (pageNum - 1) * limitNum;
+
+    const pipeline: any[] = [
+      { $match: { role: 'customer' } }
+    ];
+
+    // Search filter
+    if (search) {
+      const searchRegex = new RegExp(String(search), 'i');
+      const conditions: any[] = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex }
+      ];
+      if (mongoose.Types.ObjectId.isValid(String(search))) {
+        conditions.push({ _id: new mongoose.Types.ObjectId(String(search)) });
+      }
+      pipeline.push({ $match: { $or: conditions } });
+    }
+
+    // Date/Verification filters
+    if (filter) {
+      const now = new Date();
+      if (filter === 'registered-today') {
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        pipeline.push({ $match: { createdAt: { $gte: startOfToday } } });
+      } else if (filter === 'registered-week') {
+        const startOfWeek = new Date();
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        pipeline.push({ $match: { createdAt: { $gte: startOfWeek } } });
+      } else if (filter === 'registered-month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        pipeline.push({ $match: { createdAt: { $gte: startOfMonth } } });
+      } else if (filter === 'verified') {
+        pipeline.push({ $match: { $or: [{ emailVerified: true }, { phoneVerified: true }] } });
+      } else if (filter === 'unverified') {
+        pipeline.push({ $match: { emailVerified: { $ne: true }, phoneVerified: { $ne: true } } });
+      }
+    }
+
+    // Lookup orders
+    pipeline.push({
+      $lookup: {
+        from: 'orders',
+        localField: '_id',
+        foreignField: 'user',
+        as: 'orders'
+      }
+    });
+
+    // Project fields & sizes
+    pipeline.push({
+      $project: {
+        name: 1,
+        email: 1,
+        phone: 1,
+        status: 1,
+        createdAt: 1,
+        emailVerified: 1,
+        phoneVerified: 1,
+        avatar: 1,
+        lastLogin: 1,
+        addressCount: { $size: { $ifNull: ['$addresses', []] } },
+        wishlistCount: { $size: { $ifNull: ['$wishlist', []] } },
+        ordersList: '$orders'
+      }
+    });
+
+    // Calculate sum spent and orders count
+    pipeline.push({
+      $addFields: {
+        totalOrders: { $size: '$ordersList' },
+        totalSpent: {
+          $sum: {
+            $map: {
+              input: '$ordersList',
+              as: 'o',
+              in: {
+                $cond: [
+                  { $ne: ['$$o.paymentStatus', 'Failed'] },
+                  '$$o.payable',
+                  0
+                ]
+              }
+            }
+          }
+        },
+        lastOrderDate: { $max: '$ordersList.createdAt' }
+      }
+    });
+
+    // Drop details list to save bytes
+    pipeline.push({
+      $project: {
+        ordersList: 0
+      }
+    });
+
+    // Filter by orders count
+    if (filter === 'with-orders') {
+      pipeline.push({ $match: { totalOrders: { $gt: 0 } } });
+    } else if (filter === 'without-orders') {
+      pipeline.push({ $match: { totalOrders: 0 } });
+    } else if (filter === 'inactive') {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      pipeline.push({
+        $match: {
+          totalOrders: 0,
+          $or: [
+            { lastLogin: { $lt: thirtyDaysAgo } },
+            { lastLogin: null }
+          ]
+        }
+      });
+    }
+
+    // Sort order
+    if (filter === 'highest-spending') {
+      pipeline.push({ $sort: { totalSpent: -1 } });
+    } else {
+      pipeline.push({ $sort: { createdAt: -1 } });
+    }
+
+    // Pagination counts
+    const countPipeline = [...pipeline];
+    countPipeline.push({ $count: 'total' });
+
+    pipeline.push({ $skip: skipNum });
+    pipeline.push({ $limit: limitNum });
+
+    const [results, countResult] = await Promise.all([
+      User.aggregate(pipeline),
+      User.aggregate(countPipeline)
+    ]);
+
+    const total = countResult.length > 0 ? countResult[0].total : 0;
+
+    res.json({
+      customers: results,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+      currentPage: pageNum
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getCustomerProfileAdmin = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).populate('wishlist', 'name images price');
+    if (!user) return res.status(404).json({ error: 'Customer not found.' });
+
+    const orders = await Order.find({ user: id }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ userId: id }).populate('productId', 'name images').sort({ createdAt: -1 });
+
+    const completedOrders = orders.filter(o => o.paymentStatus !== 'Failed');
+    const totalOrders = completedOrders.length;
+    const totalSpent = completedOrders.reduce((sum, o) => sum + o.payable, 0);
+    const avgOrderValue = totalOrders > 0 ? Number((totalSpent / totalOrders).toFixed(2)) : 0;
+
+    res.json({
+      profile: user,
+      orders,
+      reviews,
+      analytics: {
+        totalOrders,
+        totalSpent,
+        avgOrderValue
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

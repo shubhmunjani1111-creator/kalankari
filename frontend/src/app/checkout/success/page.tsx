@@ -128,7 +128,7 @@ function SuccessContent() {
               </a>
             </h3>
 
-            <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Order ID</span> <span className="font-bold text-gray-800 dark:text-white">#{order._id}</span></p>
+            <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Order Number</span> <span className="font-bold text-gray-800 dark:text-white">#{order.orderNumber || order._id}</span></p>
             <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Order Date</span> <span>{new Date(order.createdAt).toLocaleDateString('en-IN')}</span></p>
             <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Payment Mode</span> <span className="uppercase">{order.paymentMethod}</span></p>
             <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Payment Status</span> <span className="font-bold text-green-600 dark:text-green-400">{order.paymentStatus}</span></p>

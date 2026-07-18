@@ -183,7 +183,7 @@ function FailureContent() {
 
       {order && (
         <div className="bg-white dark:bg-[#121111] p-6 border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm w-full text-xs text-gray-600 dark:text-gray-300 flex flex-col gap-3.5">
-          <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Order Reference</span> <span className="font-bold text-gray-850 dark:text-white">#{order._id || order.id}</span></p>
+          <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Order Reference</span> <span className="font-bold text-gray-850 dark:text-white">#{order.orderNumber || order._id || order.id}</span></p>
           <p className="flex justify-between border-b pb-2"><span className="text-gray-400 font-semibold">Payable Amount</span> <span className="font-bold text-primary dark:text-secondary text-sm">₹{order.payable.toLocaleString()}</span></p>
           <p className="flex justify-between pb-2"><span className="text-gray-400 font-semibold">Recipient</span> <span className="font-medium text-gray-850 dark:text-white">{order.shippingAddress.name}</span></p>
         </div>

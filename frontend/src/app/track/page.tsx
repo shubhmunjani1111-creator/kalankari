@@ -22,7 +22,7 @@ export default function TrackPage() {
     const cleanMobile = mobile.trim();
 
     if (!cleanOrderId) {
-      setError("Please enter a valid Order ID.");
+      setError("Please enter a valid Order Number or Order ID.");
       return;
     }
     if (!cleanMobile || cleanMobile.length < 10) {
@@ -90,7 +90,7 @@ export default function TrackPage() {
           <ArrowLeft size={14} /> Back to Shopping
         </Link>
         <h1 className="font-headings font-bold text-3xl text-gray-900 leading-tight">Track Your Shipment</h1>
-        <p className="text-sm text-gray-500 mt-2">Enter your Order ID and Mobile number to view live delivery updates.</p>
+        <p className="text-sm text-gray-500 mt-2">Enter your Order Number (e.g., KLK26-001) and Mobile number to view live delivery updates.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -98,10 +98,10 @@ export default function TrackPage() {
         <div className="lg:col-span-1 bg-white border border-gray-150 p-6 rounded-lg shadow-sm h-fit">
           <form onSubmit={handleTrack} className="flex flex-col gap-4">
             <div>
-              <label className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-2">Order Reference ID</label>
+              <label className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-2">Order Number or ID</label>
               <input 
                 type="text" 
-                placeholder="e.g. 6a551e4c73dbf..." 
+                placeholder="e.g. KLK26-001" 
                 value={orderId} 
                 onChange={(e) => setOrderId(e.target.value)}
                 className="w-full bg-[#FFFDF9] border border-gray-250 py-2.5 px-4 text-sm font-medium rounded text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary/40"
@@ -152,7 +152,7 @@ export default function TrackPage() {
               <div className="flex flex-wrap justify-between items-center border-b border-gray-100 pb-4 mb-6 gap-4">
                 <div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Order Reference</span>
-                  <h3 className="font-bold text-gray-800 text-sm mt-0.5">#{order._id || order.id}</h3>
+                  <h3 className="font-bold text-gray-800 text-sm mt-0.5">#{order.orderNumber || order._id || order.id}</h3>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Current Status</span>

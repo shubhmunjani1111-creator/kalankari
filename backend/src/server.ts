@@ -43,6 +43,12 @@ mongoose.connect(MONGO_URI)
     console.log('Successfully connected to MongoDB Atlas / Local cluster');
     await seedAdminUser();
     await seedProducts();
+    try {
+      const { migrateOrderNumbers } = require('./scripts/migrateOrderNumbers');
+      await migrateOrderNumbers();
+    } catch (migErr) {
+      console.error('[BOOT] Order Number migration trigger error:', migErr);
+    }
     app.listen(PORT, () => {
       console.log(`Kalankari backend API server active on http://localhost:${PORT}`);
     });

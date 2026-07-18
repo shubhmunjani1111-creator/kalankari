@@ -7,7 +7,8 @@ import {
   User, LogOut, Package, Star, Calendar, MapPin, Truck, 
   LayoutDashboard, Plus, Trash2, Edit3, AlertTriangle, Layers, Search, 
   TrendingUp, Users, ShoppingBag, ListOrdered, Check, Save, FileText, X, Mail,
-  MessageSquare, Lock, Eye, EyeOff, ShieldCheck, Key, Phone
+  MessageSquare, Lock, Eye, EyeOff, ShieldCheck, Key, Phone, Download, ThumbsUp, CheckCircle, XCircle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/config';
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const { user, token, isAuthenticated, login, logout } = useAuth();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'variants' | 'orders' | 'profile' | 'support'>('profile');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'catalog' | 'stocks' | 'variants' | 'orders' | 'profile' | 'support' | 'customers' | 'reviews'>('profile');
 
   // Email Logs States
 
@@ -177,6 +178,116 @@ export default function Dashboard() {
   const [mobileStep, setMobileStep] = useState<'request' | 'confirm'>('request');
   const [mobileModalError, setMobileModalError] = useState("");
   const [mobileModalSuccess, setMobileModalSuccess] = useState("");
+
+  // Customer Management States
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [customersTotal, setCustomersTotal] = useState(0);
+  const [customersCurrentPage, setCustomersCurrentPage] = useState(1);
+  const [customersTotalPages, setCustomersTotalPages] = useState(1);
+  const [customersSearch, setCustomersSearch] = useState("");
+  const [customersFilter, setCustomersFilter] = useState("");
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCustomerProfile, setSelectedCustomerProfile] = useState<any | null>(null);
+
+  // Reviews Moderation & Curation States
+  const [adminReviews, setAdminReviews] = useState<any[]>([]);
+  const [adminReviewsTotal, setAdminReviewsTotal] = useState(0);
+  const [adminReviewsCurrentPage, setAdminReviewsCurrentPage] = useState(1);
+  const [adminReviewsTotalPages, setAdminReviewsTotalPages] = useState(1);
+  const [adminReviewsSearch, setAdminReviewsSearch] = useState("");
+  const [adminReviewsFilter, setAdminReviewsFilter] = useState("");
+  const [loadingAdminReviews, setLoadingAdminReviews] = useState(false);
+  
+  // Homepage reviews list and selection catalog
+  const [homepageReviews, setHomepageReviews] = useState<any[]>([]);
+  const [allApprovedReviewsForCuration, setAllApprovedReviewsForCuration] = useState<any[]>([]);
+  const [reviewEditModal, setReviewEditModal] = useState<any | null>(null);
+
+  // Lightbox overlay state inside dashboard
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIdx, setLightboxIdx] = useState<number>(-1);
+
+  // Fetch Customers Admin
+  const fetchCustomersAdmin = async () => {
+    if (!token || !isAdmin) return;
+    setLoadingCustomers(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/admin/customers?search=${encodeURIComponent(customersSearch)}&filter=${customersFilter}&page=${customersCurrentPage}&limit=10`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setCustomersList(data.customers || []);
+        setCustomersTotal(data.total || 0);
+        setCustomersTotalPages(data.totalPages || 1);
+      }
+    } catch (err) {
+      console.error("Fetch customers admin failed:", err);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  // Fetch Reviews Admin
+  const fetchReviewsAdmin = async () => {
+    if (!token || !isAdmin) return;
+    setLoadingAdminReviews(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/admin/reviews?search=${encodeURIComponent(adminReviewsSearch)}&filter=${adminReviewsFilter}&page=${adminReviewsCurrentPage}&limit=10`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setAdminReviews(data.reviews || []);
+        setAdminReviewsTotal(data.totalReviews || 0);
+        setAdminReviewsTotalPages(data.totalPages || 1);
+      }
+    } catch (err) {
+      console.error("Fetch reviews admin failed:", err);
+    } finally {
+      setLoadingAdminReviews(false);
+    }
+  };
+
+  // Fetch Homepage reviews curation list & all approved reviews
+  const fetchHomepageReviewsAdmin = async () => {
+    if (!token || !isAdmin) return;
+    try {
+      const hres = await fetch(`${API_BASE_URL}/api/admin/homepage-reviews`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (hres.ok) {
+        const hdata = await hres.json();
+        setHomepageReviews(hdata || []);
+      }
+
+      const ares = await fetch(`${API_BASE_URL}/api/admin/reviews?filter=Approved&limit=100`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (ares.ok) {
+        const adata = await ares.json();
+        setAllApprovedReviewsForCuration(adata.reviews || []);
+      }
+    } catch (err) {
+      console.error("Fetch homepage reviews failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAdmin || !token) return;
+    if (activeTab === 'customers') {
+      fetchCustomersAdmin();
+    } else if (activeTab === 'reviews') {
+      fetchReviewsAdmin();
+      fetchHomepageReviewsAdmin();
+    }
+  }, [activeTab, customersCurrentPage, customersSearch, customersFilter, adminReviewsCurrentPage, adminReviewsSearch, adminReviewsFilter, token, isAdmin]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -907,6 +1018,20 @@ export default function Dashboard() {
           >
             <MessageSquare size={14} /> Support Messages
           </button>
+
+          <button 
+            onClick={() => setActiveTab('customers')}
+            className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'customers' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
+          >
+            <Users size={14} /> Customers
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('reviews')}
+            className={`flex items-center gap-1.5 py-2.5 px-4 rounded text-xs font-bold transition-all ${activeTab === 'reviews' ? 'bg-primary text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
+          >
+            <Star size={14} /> Reviews Moderation
+          </button>
         </div>
       )}
 
@@ -1385,7 +1510,7 @@ export default function Dashboard() {
                   {adminOrders.map((o) => (
                     <tr key={o._id} className="border-b border-gray-100 dark:border-zinc-900/50 hover:bg-gray-50/50 dark:hover:bg-zinc-900/20">
                       <td className="py-4">
-                        <span className="font-bold text-gray-800 dark:text-white block">#{o._id}</span>
+                        <span className="font-bold text-gray-800 dark:text-white block">#{o.orderNumber || o._id}</span>
                         <span className="text-[10px] text-gray-400 block mt-0.5">{new Date(o.createdAt).toLocaleDateString('en-IN')}</span>
                       </td>
                       <td className="py-4">
@@ -1538,6 +1663,653 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 4.9: CUSTOMER MANAGEMENT */}
+      {isAdmin && activeTab === 'customers' && (
+        <div className="flex flex-col gap-6 w-full text-left">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 pb-5">
+            <div>
+              <h2 className="font-headings text-2xl font-bold text-gray-800">Customer Accounts</h2>
+              <p className="text-xs text-gray-400 mt-1">Monitor user registrations, spent analytics, address listings, verification toggles, and login logs.</p>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              <select 
+                value={customersFilter}
+                onChange={(e) => { setCustomersFilter(e.target.value); setCustomersCurrentPage(1); }}
+                className="bg-transparent border border-gray-250 py-1.5 px-3 rounded text-xs focus:outline-none focus:border-primary cursor-pointer text-gray-700 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white"
+              >
+                <option value="">All Accounts</option>
+                <option value="registered-today">Registered Today</option>
+                <option value="registered-week">Registered This Week</option>
+                <option value="registered-month">Registered This Month</option>
+                <option value="verified">Verified Buyers (OTP Completed)</option>
+                <option value="unverified">Unverified Accounts</option>
+                <option value="with-orders">Has Placed Orders</option>
+                <option value="without-orders">No Orders Placed</option>
+                <option value="highest-spending">Highest Spending Customers</option>
+                <option value="inactive">Inactive (30d+ No Login & 0 Orders)</option>
+              </select>
+              
+              <button 
+                onClick={() => {
+                  const headers = ["Customer ID", "Name", "Email", "Phone", "Status", "Registered", "Orders", "Total Spent"];
+                  const rows = customersList.map(c => [
+                    c._id, c.name, c.email, c.phone || 'N/A', c.status, new Date(c.createdAt).toLocaleDateString(), c.totalOrders || 0, `₹${c.totalSpent || 0}`
+                  ]);
+                  const csvContent = "data:text/csv;charset=utf-8," 
+                    + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", encodedUri);
+                  link.setAttribute("download", `Kalankari_Customers_${new Date().toISOString().slice(0,10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="bg-secondary text-primary font-bold text-xs py-1.5 px-3 rounded flex items-center gap-1.5 hover:bg-secondary/80 transition-colors"
+              >
+                <Download size={13} /> Export list
+              </button>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="relative max-w-md w-full">
+            <Search size={14} className="absolute left-3.5 top-3 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search by name, email, phone, or ID..."
+              value={customersSearch}
+              onChange={(e) => { setCustomersSearch(e.target.value); setCustomersCurrentPage(1); }}
+              className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs dark:bg-zinc-900 dark:border-zinc-800 dark:text-white"
+            />
+          </div>
+
+          {loadingCustomers ? (
+            <div className="py-20 text-center text-xs text-gray-400">Querying user data...</div>
+          ) : customersList.length === 0 ? (
+            <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 p-12 rounded-lg text-center text-xs text-gray-400">
+              No matching customers found.
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-55/70 dark:bg-zinc-900/40 border-b border-gray-150 dark:border-zinc-900 font-bold text-[10px] uppercase tracking-wider text-gray-500">
+                      <th className="p-4">Customer Details</th>
+                      <th className="p-4">Contact</th>
+                      <th className="p-4 text-center">Verifications</th>
+                      <th className="p-4 text-center">Activity Metrics</th>
+                      <th className="p-4 text-right">Financials</th>
+                      <th className="p-4 text-center">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-900">
+                    {customersList.map((c) => (
+                      <tr key={c._id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/10">
+                        <td className="p-4 align-middle">
+                          <div className="font-semibold text-gray-800 dark:text-white">{c.name}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">Joined: {new Date(c.createdAt).toLocaleDateString('en-IN')}</div>
+                        </td>
+                        <td className="p-4 align-middle">
+                          <div className="text-gray-700 dark:text-gray-300">{c.email}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">{c.phone || "No Mobile Added"}</div>
+                        </td>
+                        <td className="p-4 align-middle text-center">
+                          <div className="flex justify-center gap-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${c.emailVerified ? 'bg-green-50 text-green-600 dark:bg-green-950/20' : 'bg-red-50 text-red-500'}`}>
+                              {c.emailVerified ? 'Email Verified' : 'Email Unverified'}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${c.phoneVerified ? 'bg-green-50 text-green-600 dark:bg-green-950/20' : 'bg-red-50 text-red-500'}`}>
+                              {c.phoneVerified ? 'Mobile Verified' : 'Mobile Unverified'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 align-middle text-center">
+                          <div className="text-gray-700 dark:text-gray-300 font-semibold">{c.totalOrders || 0} Orders</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5 font-medium">
+                            {c.lastLogin ? `Last Login: ${new Date(c.lastLogin).toLocaleDateString('en-IN')}` : "Never Logged In"}
+                          </div>
+                        </td>
+                        <td className="p-4 align-middle text-right font-bold text-primary dark:text-secondary">
+                          ₹{(c.totalSpent || 0).toLocaleString()}
+                        </td>
+                        <td className="p-4 align-middle text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                            c.status === 'Active' ? 'bg-green-50 text-green-600 dark:bg-green-950/20' : 'bg-red-50 text-red-650 dark:bg-red-950/20'
+                          }`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="p-4 align-middle text-right space-x-1.5">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`${API_BASE_URL}/api/admin/customers/${c._id}`, {
+                                  headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const data = await response.json();
+                                if (response.ok) {
+                                  setSelectedCustomerProfile(data);
+                                } else {
+                                  alert(data.error || "Failed to fetch profile details.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:text-zinc-350 dark:hover:bg-zinc-700 font-semibold px-2 py-1 rounded text-[10px]"
+                          >
+                            Profile Details
+                          </button>
+                          <button 
+                            onClick={async () => {
+                              if (!confirm(`Are you sure you want to change this customer's status?`)) return;
+                              try {
+                                const response = await fetch(`${API_BASE_URL}/api/admin/customers/${c._id}/status`, {
+                                  method: 'PATCH',
+                                  headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const data = await response.json();
+                                if (response.ok) {
+                                  fetchCustomersAdmin();
+                                } else {
+                                  alert(data.error || "Failed to toggle status.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className={`${c.status === 'Active' ? 'bg-red-50 text-red-650 hover:bg-red-100' : 'bg-green-50 text-green-650 hover:bg-green-100'} px-2 py-1 rounded text-[10px] font-bold`}
+                          >
+                            {c.status === 'Active' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {customersTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-3.5 mt-2">
+              <button 
+                disabled={customersCurrentPage === 1}
+                onClick={() => setCustomersCurrentPage(prev => prev - 1)}
+                className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 text-[10px] font-bold uppercase tracking-wider transition-colors hover:bg-gray-50 cursor-pointer"
+              >
+                Prev
+              </button>
+              <span className="text-[10px] font-bold text-gray-400">
+                Page {customersCurrentPage} of {customersTotalPages} ({customersTotal} customers)
+              </span>
+              <button 
+                disabled={customersCurrentPage === customersTotalPages}
+                onClick={() => setCustomersCurrentPage(prev => prev + 1)}
+                className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 text-[10px] font-bold uppercase tracking-wider transition-colors hover:bg-gray-50 cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4.10: REVIEWS MODERATION & CURATION */}
+      {isAdmin && activeTab === 'reviews' && (
+        <div className="flex flex-col gap-8 w-full text-left">
+          
+          {/* Section 1: Moderation list */}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 pb-5">
+              <div>
+                <h2 className="font-headings text-2xl font-bold text-gray-800">Reviews & Ratings</h2>
+                <p className="text-xs text-gray-400 mt-1">Moderate customer submissions, approve/reject/hide feedback, and feature reviews on the homepage.</p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2.5">
+                <select 
+                  value={adminReviewsFilter}
+                  onChange={(e) => { setAdminReviewsFilter(e.target.value); setAdminReviewsCurrentPage(1); }}
+                  className="bg-transparent border border-gray-250 py-1.5 px-3 rounded text-xs focus:outline-none focus:border-primary cursor-pointer text-gray-700 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Pending">Pending Approval</option>
+                  <option value="Approved">Approved / Active</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Hidden">Hidden</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="relative max-w-md w-full">
+              <Search size={14} className="absolute left-3.5 top-3 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search reviews by user name, comments, or product name..."
+                value={adminReviewsSearch}
+                onChange={(e) => { setAdminReviewsSearch(e.target.value); setAdminReviewsCurrentPage(1); }}
+                className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs dark:bg-zinc-900 dark:border-zinc-800 dark:text-white"
+              />
+            </div>
+
+            {loadingAdminReviews ? (
+              <div className="py-20 text-center text-xs text-gray-400">Loading reviews database...</div>
+            ) : adminReviews.length === 0 ? (
+              <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 p-12 rounded-lg text-center text-xs text-gray-400">
+                No customer reviews matching current criteria.
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-[#121111] border border-gray-150 dark:border-zinc-900 rounded-lg shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-55/70 dark:bg-zinc-900/40 border-b border-gray-150 dark:border-zinc-900 font-bold text-[10px] uppercase tracking-wider text-gray-500">
+                        <th className="p-4">Product & User</th>
+                        <th className="p-4 text-center">Rating</th>
+                        <th className="p-4">Review Content</th>
+                        <th className="p-4 text-center">Featured</th>
+                        <th className="p-4 text-center">Status</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-zinc-900">
+                      {adminReviews.map((rev) => (
+                        <tr key={rev._id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/10">
+                          <td className="p-4 align-top w-48">
+                            <div className="font-semibold text-gray-800 dark:text-white leading-tight">{rev.productId?.name || 'Deleted Product'}</div>
+                            <div className="text-[10px] text-gray-400 mt-1 font-medium">Submitted by: {rev.userId?.name || rev.userName}</div>
+                            <div className="text-[9px] text-gray-405 mt-0.5">{rev.userId?.email || 'N/A'}</div>
+                          </td>
+                          <td className="p-4 align-top text-center w-24">
+                            <div className="flex justify-center text-secondary gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} size={10} fill={i < rev.rating ? "currentColor" : "none"} className="text-secondary" />
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-gray-400 block mt-1">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                          </td>
+                          <td className="p-4 align-top max-w-sm">
+                            {rev.title && <div className="font-bold text-gray-800 dark:text-white mb-1">{rev.title}</div>}
+                            <div className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{rev.review}</div>
+                            {rev.images && rev.images.length > 0 && (
+                              <div className="flex gap-1.5 mt-2.5">
+                                {rev.images.map((img: string, idx: number) => (
+                                  <img 
+                                    key={idx} 
+                                    src={img} 
+                                    alt="review zoom" 
+                                    className="h-12 w-12 object-cover rounded border border-gray-150 hover:scale-105 transition-transform cursor-pointer"
+                                    onClick={() => { setLightboxImages(rev.images); setLightboxIdx(idx); }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 align-top text-center w-20">
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`${API_BASE_URL}/api/admin/reviews/${rev._id}/feature`, {
+                                    method: 'PATCH',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                  });
+                                  if (response.ok) {
+                                    fetchReviewsAdmin();
+                                  } else {
+                                    alert("Failed to toggle feature status.");
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
+                              className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-colors ${
+                                rev.featured ? 'bg-primary text-white hover:bg-primary-hover' : 'bg-gray-100 text-gray-450 hover:bg-gray-200 dark:bg-zinc-800'
+                              }`}
+                            >
+                              {rev.featured ? 'Pinned' : 'Regular'}
+                            </button>
+                          </td>
+                          <td className="p-4 align-top text-center w-24">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                              rev.status === 'Approved' ? 'bg-green-50 text-green-600 dark:bg-green-950/20' :
+                              rev.status === 'Pending' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-950/20' : 'bg-red-50 text-red-650 dark:bg-red-950/20'
+                            }`}>
+                              {rev.status}
+                            </span>
+                          </td>
+                          <td className="p-4 align-top text-right space-y-1.5 w-32">
+                            <div className="flex flex-wrap gap-1 justify-end">
+                              {rev.status !== 'Approved' && (
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch(`${API_BASE_URL}/api/admin/reviews/${rev._id}/status`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ status: 'Approved' })
+                                      });
+                                      if (res.ok) fetchReviewsAdmin();
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className="bg-green-50 text-green-655 hover:bg-green-100 px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                              {rev.status !== 'Rejected' && (
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch(`${API_BASE_URL}/api/admin/reviews/${rev._id}/status`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ status: 'Rejected' })
+                                      });
+                                      if (res.ok) fetchReviewsAdmin();
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className="bg-red-50 text-red-655 hover:bg-red-100 px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                                >
+                                  Reject
+                                </button>
+                              )}
+                              {rev.status !== 'Hidden' && (
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch(`${API_BASE_URL}/api/admin/reviews/${rev._id}/status`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ status: 'Hidden' })
+                                      });
+                                      if (res.ok) fetchReviewsAdmin();
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:text-gray-300 px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                                >
+                                  Hide
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => setReviewEditModal(rev)}
+                                className="bg-primary hover:bg-primary-hover text-white px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  if (!confirm("Are you sure you want to permanently delete this review?")) return;
+                                  try {
+                                    const res = await fetch(`${API_BASE_URL}/api/admin/reviews/${rev._id}`, {
+                                      method: 'DELETE',
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    if (res.ok) fetchReviewsAdmin();
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
+                                }}
+                                className="bg-red-650 hover:bg-red-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {adminReviewsTotalPages > 1 && (
+              <div className="flex items-center justify-center gap-3.5 mt-2">
+                <button 
+                  disabled={adminReviewsCurrentPage === 1}
+                  onClick={() => setAdminReviewsCurrentPage(prev => prev - 1)}
+                  className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 text-[10px] font-bold uppercase tracking-wider transition-colors hover:bg-gray-50 cursor-pointer"
+                >
+                  Prev
+                </button>
+                <span className="text-[10px] font-bold text-gray-400">
+                  Page {adminReviewsCurrentPage} of {adminReviewsTotalPages} ({adminReviewsTotal} reviews)
+                </span>
+                <button 
+                  disabled={adminReviewsCurrentPage === adminReviewsTotalPages}
+                  onClick={() => setAdminReviewsCurrentPage(prev => prev + 1)}
+                  className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 text-[10px] font-bold uppercase tracking-wider transition-colors hover:bg-gray-50 cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Homepage reviews curation panel */}
+          <div className="border-t border-gray-150 dark:border-zinc-900 pt-8 mt-4 flex flex-col gap-6">
+            <div>
+              <h3 className="font-headings text-lg font-bold text-gray-800 dark:text-white">Homepage Review Curation</h3>
+              <p className="text-xs text-gray-400 mt-1">Pin approved reviews and configure their order for the homepage reviews catalog carousel.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Add / Pin reviews panel */}
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500">Select Approved Review to Pin</h4>
+                <div className="border border-gray-150 dark:border-zinc-900 rounded-lg p-4 bg-gray-50/50 dark:bg-zinc-900/30 max-h-[350px] overflow-y-auto flex flex-col gap-3">
+                  {allApprovedReviewsForCuration.length === 0 ? (
+                    <p className="text-gray-400 italic text-[11px] text-center">No approved reviews available to curate.</p>
+                  ) : (
+                    allApprovedReviewsForCuration.map((rev) => {
+                      const isAlreadyPinned = homepageReviews.some(hr => hr.reviewId?._id === rev._id || hr.review?._id === rev._id);
+                      return (
+                        <div key={rev._id} className="bg-white dark:bg-[#121111] border dark:border-zinc-900 rounded p-3 flex flex-col gap-2 relative">
+                          <div className="text-[10px] flex justify-between font-semibold">
+                            <span className="text-gray-800 dark:text-white">{rev.productId?.name}</span>
+                            <span className="text-gray-400">{rev.userId?.name || rev.userName}</span>
+                          </div>
+                          <div className="flex text-secondary gap-0.5">
+                            {[...Array(rev.rating)].map((_, i) => <Star key={i} size={8} fill="currentColor" className="text-secondary" />)}
+                          </div>
+                          <p className="text-[11px] text-gray-500 italic line-clamp-2 leading-relaxed">{rev.review}</p>
+                          <button
+                            disabled={isAlreadyPinned}
+                            onClick={async () => {
+                              const updatedItems = [
+                                ...homepageReviews.map(item => ({
+                                  reviewId: item.review?._id || item.reviewId?._id || item.reviewId,
+                                  order: item.order,
+                                  pinned: item.pinned,
+                                  enabled: item.enabled
+                                })),
+                                {
+                                  reviewId: rev._id,
+                                  order: homepageReviews.length,
+                                  pinned: true,
+                                  enabled: true
+                                }
+                              ];
+                              try {
+                                const response = await fetch(`${API_BASE_URL}/api/admin/homepage-reviews`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({ items: updatedItems })
+                                });
+                                if (response.ok) fetchHomepageReviewsAdmin();
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className={`w-full py-1.5 rounded text-[10px] font-bold uppercase mt-1 tracking-wider cursor-pointer ${
+                              isAlreadyPinned 
+                                ? 'bg-gray-100 text-gray-450 dark:bg-zinc-800 dark:text-zinc-500 pointer-events-none' 
+                                : 'bg-primary text-white hover:bg-primary-hover'
+                            }`}
+                          >
+                            {isAlreadyPinned ? 'Already Curated' : 'Pin to Homepage'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Pinned reviews curation ordering listing */}
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500">Currently Curated Homepage Reviews</h4>
+                <div className="bg-white dark:bg-[#121111] border dark:border-zinc-900 rounded-lg overflow-hidden">
+                  {homepageReviews.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-gray-400 italic">No pinned reviews. Use the left panel to pin reviews onto the homepage slider.</div>
+                  ) : (
+                    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+                      {homepageReviews.map((item, idx) => {
+                        const rev = item.review || item.reviewId;
+                        if (!rev) return null;
+                        return (
+                          <div key={item._id || idx} className="p-4 flex items-center justify-between gap-4 hover:bg-gray-50/20 dark:hover:bg-zinc-900/10 text-xs">
+                            <div className="flex-grow max-w-[70%]">
+                              <div className="font-semibold text-gray-800 dark:text-white leading-tight">
+                                {rev.productId?.name || 'Product'} (Buyer: {rev.userId?.name || rev.userName})
+                              </div>
+                              <p className="text-[11px] text-gray-505 mt-1 italic line-clamp-1">{rev.review}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  disabled={idx === 0}
+                                  onClick={async () => {
+                                    const items = [...homepageReviews];
+                                    const temp = items[idx];
+                                    items[idx] = items[idx - 1];
+                                    items[idx - 1] = temp;
+                                    
+                                    const payload = items.map((x, i) => ({
+                                      reviewId: x.review?._id || x.reviewId?._id || x.reviewId,
+                                      order: i,
+                                      pinned: x.pinned,
+                                      enabled: x.enabled
+                                    }));
+                                    try {
+                                      await fetch(`${API_BASE_URL}/api/admin/homepage-reviews`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ items: payload })
+                                      });
+                                      fetchHomepageReviewsAdmin();
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className="p-1 border dark:border-zinc-800 rounded hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-30 text-[8px] font-bold cursor-pointer"
+                                >
+                                  ▲
+                                </button>
+                                <span className="font-bold w-4 text-center dark:text-white">{idx + 1}</span>
+                                <button
+                                  disabled={idx === homepageReviews.length - 1}
+                                  onClick={async () => {
+                                    const items = [...homepageReviews];
+                                    const temp = items[idx];
+                                    items[idx] = items[idx + 1];
+                                    items[idx + 1] = temp;
+                                    
+                                    const payload = items.map((x, i) => ({
+                                      reviewId: x.review?._id || x.reviewId?._id || x.reviewId,
+                                      order: i,
+                                      pinned: x.pinned,
+                                      enabled: x.enabled
+                                    }));
+                                    try {
+                                      await fetch(`${API_BASE_URL}/api/admin/homepage-reviews`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ items: payload })
+                                      });
+                                      fetchHomepageReviewsAdmin();
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                  className="p-1 border dark:border-zinc-800 rounded hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-30 text-[8px] font-bold cursor-pointer"
+                                >
+                                  ▼
+                                </button>
+                              </div>
+
+                              <button
+                                onClick={async () => {
+                                  const updatedItems = homepageReviews
+                                    .filter((_, i) => i !== idx)
+                                    .map((x, i) => ({
+                                      reviewId: x.review?._id || x.reviewId?._id || x.reviewId,
+                                      order: i,
+                                      pinned: x.pinned,
+                                      enabled: x.enabled
+                                    }));
+                                  try {
+                                    const response = await fetch(`${API_BASE_URL}/api/admin/homepage-reviews`, {
+                                      method: 'PUT',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                      },
+                                      body: JSON.stringify({ items: updatedItems })
+                                    });
+                                    if (response.ok) fetchHomepageReviewsAdmin();
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
+                                }}
+                                className="bg-red-50 hover:bg-red-100 text-red-650 p-1.5 rounded transition-colors cursor-pointer"
+                                title="Remove / Unpin"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1786,7 +2558,7 @@ export default function Dashboard() {
                     <div key={o._id} className="border border-gray-100 dark:border-zinc-900 rounded-lg p-5 flex flex-col gap-4 text-xs relative">
                       <div className="flex flex-wrap justify-between items-center border-b pb-3 border-gray-50 dark:border-zinc-900/50 gap-2">
                         <div>
-                          <span className="font-bold text-gray-800 dark:text-white">Order Reference: #{o._id}</span>
+                          <span className="font-bold text-gray-800 dark:text-white">Order Reference: #{o.orderNumber || o._id}</span>
                           <span className="text-[10px] text-gray-400 block mt-0.5">Date: {new Date(o.createdAt).toLocaleDateString('en-IN')}</span>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1828,7 +2600,17 @@ export default function Dashboard() {
                           <div key={i} className="flex justify-between items-center">
                             <div>
                               <span className="font-semibold text-gray-850 dark:text-white block">{it.name}</span>
-                              <span className="text-[10px] text-gray-400 block mt-0.5">Size: {it.selectedSize} | Qty: {it.quantity}</span>
+                              <span className="text-[10px] text-gray-400 block mt-0.5">
+                                Size: {it.selectedSize} | Qty: {it.quantity}
+                                {o.status === 'Delivered' && (
+                                  <Link 
+                                    href={`/shop/${it.product}?writeReview=true`}
+                                    className="text-primary dark:text-secondary font-bold hover:underline ml-3 inline-flex items-center gap-0.5 cursor-pointer uppercase tracking-wider text-[9px]"
+                                  >
+                                    <Star size={9} fill="currentColor" /> Write a Review
+                                  </Link>
+                                )}
+                              </span>
                             </div>
                             <span className="font-semibold text-gray-800 dark:text-white">₹{(it.price * it.quantity).toLocaleString()}</span>
                           </div>
@@ -2868,6 +3650,275 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Admin Customer Profile Details Modal */}
+      {selectedCustomerProfile && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-4xl w-full p-6 sm:p-8 rounded-lg shadow-2xl relative text-left max-h-[90vh] overflow-y-auto flex flex-col gap-6">
+            <button 
+              onClick={() => setSelectedCustomerProfile(null)}
+              className="absolute right-6 top-6 text-gray-400 hover:text-primary transition-colors text-lg cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-3">
+                <h3 className="font-headings font-bold text-xl text-gray-905">{selectedCustomerProfile.profile?.name}</h3>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                  selectedCustomerProfile.profile?.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                }`}>
+                  {selectedCustomerProfile.profile?.status}
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Customer ID: {selectedCustomerProfile.profile?._id}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-50 p-4 rounded border">
+              <div>
+                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Registered Date</span>
+                <span className="text-xs font-semibold text-gray-800 mt-1 block">
+                  {new Date(selectedCustomerProfile.profile?.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Loyalty Points</span>
+                <span className="text-xs font-semibold text-primary mt-1 block">{selectedCustomerProfile.profile?.loyaltyPoints || 0} Points</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Total Spent</span>
+                <span className="text-xs font-semibold text-green-600 mt-1 block">₹{selectedCustomerProfile.analytics?.totalSpent?.toLocaleString() || 0}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Avg. Order Value</span>
+                <span className="text-xs font-semibold text-gray-850 mt-1 block">₹{selectedCustomerProfile.analytics?.avgOrderValue?.toLocaleString() || 0}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              {/* Address Book */}
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 border-b pb-2 mb-3">Address Book ({selectedCustomerProfile.profile?.addresses?.length || 0})</h4>
+                {(!selectedCustomerProfile.profile?.addresses || selectedCustomerProfile.profile.addresses.length === 0) ? (
+                  <p className="text-gray-400 italic text-xs">No shipping addresses registered yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedCustomerProfile.profile.addresses.map((addr: any, idx: number) => (
+                      <div key={idx} className="border p-3 rounded bg-white text-xs flex flex-col gap-1 shadow-sm">
+                        <div className="font-bold text-gray-800 flex justify-between">
+                          <span>{addr.name}</span>
+                          <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-semibold">{addr.tag || 'Address'}</span>
+                        </div>
+                        <p className="text-gray-650 mt-1">{addr.addressLine}</p>
+                        <p className="text-gray-650">{addr.city}, {addr.state} - {addr.postalCode}</p>
+                        <p className="text-gray-400 mt-1">Phone: {addr.phone}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Order History */}
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 border-b pb-2 mb-3">Order History ({selectedCustomerProfile.orders?.length || 0})</h4>
+                {(!selectedCustomerProfile.orders || selectedCustomerProfile.orders.length === 0) ? (
+                  <p className="text-gray-400 italic text-xs">No orders recorded in order logs.</p>
+                ) : (
+                  <div className="border rounded-lg overflow-hidden max-h-[250px] overflow-y-auto shadow-sm">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-55/70 border-b font-semibold text-gray-500 text-[10px] uppercase">
+                          <th className="p-3">Order Number</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3">Method</th>
+                          <th className="p-3 text-right">Payable</th>
+                          <th className="p-3 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {selectedCustomerProfile.orders.map((o: any) => (
+                          <tr key={o._id} className="hover:bg-gray-50/50">
+                            <td className="p-3 font-bold text-gray-805">#{o.orderNumber || o._id}</td>
+                            <td className="p-3 text-gray-400">{new Date(o.createdAt).toLocaleDateString()}</td>
+                            <td className="p-3 text-gray-550 uppercase">{o.paymentMethod}</td>
+                            <td className="p-3 text-right font-semibold text-primary">₹{o.payable.toLocaleString()}</td>
+                            <td className="p-3 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${
+                                o.paymentStatus === 'Completed' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'
+                              }`}>
+                                {o.paymentStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Submitted Reviews */}
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-700 border-b pb-2 mb-3">Submitted Reviews ({selectedCustomerProfile.reviews?.length || 0})</h4>
+                {(!selectedCustomerProfile.reviews || selectedCustomerProfile.reviews.length === 0) ? (
+                  <p className="text-gray-400 italic text-xs">No reviews submitted by this customer.</p>
+                ) : (
+                  <div className="flex flex-col gap-4 max-h-[250px] overflow-y-auto pr-1">
+                    {selectedCustomerProfile.reviews.map((rev: any) => (
+                      <div key={rev._id} className="border p-3.5 rounded bg-white flex flex-col gap-2 shadow-sm text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-850">{rev.productId?.name || 'Deleted Product'}</span>
+                          <span className="text-[10px] text-gray-400">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex text-secondary gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={10} fill={i < rev.rating ? "currentColor" : "none"} className="text-secondary" />
+                          ))}
+                        </div>
+                        {rev.title && <div className="font-bold text-gray-800">{rev.title}</div>}
+                        <p className="text-gray-650 italic">{rev.review}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Review Edit Modal */}
+      {reviewEditModal && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-6 sm:p-8 rounded-lg shadow-2xl relative text-left">
+            <button 
+              onClick={() => setReviewEditModal(null)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-primary transition-colors text-lg cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="font-headings font-bold text-lg text-gray-905 mb-4">Edit Customer Review</h3>
+
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const res = await fetch(`${API_BASE_URL}/api/admin/reviews/${reviewEditModal._id}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                      rating: reviewEditModal.rating,
+                      title: reviewEditModal.title,
+                      review: reviewEditModal.review
+                    })
+                  });
+                  if (res.ok) {
+                    setReviewEditModal(null);
+                    fetchReviewsAdmin();
+                  } else {
+                    const err = await res.json();
+                    alert(err.error || "Failed to update review.");
+                  }
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              className="flex flex-col gap-4 text-xs"
+            >
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Rating Stars</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewEditModal((prev: any) => ({ ...prev, rating: star }))}
+                      className="text-secondary hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <Star size={20} fill={star <= reviewEditModal.rating ? "currentColor" : "none"} className="text-secondary" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Review Title</label>
+                <input 
+                  type="text"
+                  required
+                  value={reviewEditModal.title || ''}
+                  onChange={(e) => setReviewEditModal((prev: any) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Review title summary"
+                  className="py-2.5 px-4 border border-gray-250 rounded focus:outline-none focus:border-primary text-xs"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-[10px] text-gray-400 uppercase tracking-wider">Review Content</label>
+                <textarea 
+                  rows={4}
+                  required
+                  value={reviewEditModal.review || ''}
+                  onChange={(e) => setReviewEditModal((prev: any) => ({ ...prev, review: e.target.value }))}
+                  placeholder="Type review details here..."
+                  className="py-2.5 px-4 border border-gray-250 rounded focus:outline-none focus:border-primary resize-none text-xs"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="bg-primary hover:bg-primary-hover text-white py-2.5 rounded font-bold uppercase tracking-wider text-xs shadow cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Review Lightbox Zoom */}
+      {lightboxIdx !== -1 && lightboxImages.length > 0 && (
+        <div className="fixed inset-0 bg-black/95 z-[99999] flex flex-col items-center justify-center p-4 select-none">
+          <button 
+            onClick={() => setLightboxIdx(-1)} 
+            className="absolute top-6 right-6 text-white hover:text-red-450 p-2.5 rounded-full bg-white/10 transition-colors cursor-pointer"
+          >
+            <X size={24} />
+          </button>
+          
+          <div className="relative max-w-4xl max-h-[80vh] flex items-center justify-center w-full gap-4">
+            {lightboxImages.length > 1 && (
+              <button 
+                onClick={() => setLightboxIdx(prev => (prev - 1 + lightboxImages.length) % lightboxImages.length)}
+                className="text-white hover:bg-white/10 p-3 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+              >
+                <ChevronLeft size={36} />
+              </button>
+            )}
+            
+            <img 
+              src={lightboxImages[lightboxIdx]} 
+              alt="Review attachment zoomed view" 
+              className="max-w-full max-h-[75vh] object-contain rounded shadow-2xl" 
+            />
+
+            {lightboxImages.length > 1 && (
+              <button 
+                onClick={() => setLightboxIdx(prev => (prev + 1) % lightboxImages.length)}
+                className="text-white hover:bg-white/10 p-3 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+              >
+                <ChevronRight size={36} />
+              </button>
+            )}
+          </div>
+          
+          <div className="text-white/60 text-xs mt-4 font-semibold tracking-wider">
+            Image {lightboxIdx + 1} of {lightboxImages.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

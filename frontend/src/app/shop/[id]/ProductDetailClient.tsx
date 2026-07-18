@@ -639,7 +639,7 @@ export default function ProductDetailClient({ params }: { params: any }) {
               {activeTab === 'shipping' && (
                 <div className="flex flex-col gap-2.5">
                   <p className="flex items-center gap-2"><Truck size={14} /> <span>Pan-India Delivery across 18,000+ pin codes. Orders are processed within 24 hours.</span></p>
-                  <p className="flex items-center gap-2"><RefreshCw size={14} /> <span>Standard delivery: 4-7 business days. Express: 2-3 business days.</span></p>
+                  <p className="flex items-center gap-2"><RefreshCw size={14} /> <span>Standard delivery: 7-10 business days for Metro Cities, 10-12 days for Non-Metros, and 10-15 days for rest of India.</span></p>
                   <p className="flex items-center gap-2"><Info size={14} /> <span>Easy sizing & design exchanges inside 7 days of delivery. Keep tags attached.</span></p>
                 </div>
               )}

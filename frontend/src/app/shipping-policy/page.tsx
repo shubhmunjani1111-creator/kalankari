@@ -16,9 +16,9 @@ export default function ShippingPolicy() {
           <h2 className="font-headings font-bold text-lg text-gray-800 dark:text-white mb-2.5">2. Processing & Delivery Timeline</h2>
           <p>All orders are processed and shipped from our Surat hub within 1-2 business days. Delivery timelines are as follows:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Metro Cities:</strong> 3-5 business days.</li>
-            <li><strong>Non-Metro Cities & Tier 2/3 Towns:</strong> 5-7 business days.</li>
-            <li><strong>Rest of India:</strong> 7-10 business days.</li>
+            <li><strong>Metro Cities:</strong> 7-10 business days.</li>
+            <li><strong>Non-Metro Cities & Tier 2/3 Towns:</strong> 10-12 business days.</li>
+            <li><strong>Rest of India:</strong> 10-15 business days.</li>
           </ul>
         </section>
 

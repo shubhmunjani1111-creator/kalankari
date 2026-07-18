@@ -23,7 +23,7 @@ export default function FAQ() {
       questions: [
         {
           q: "How long does shipping take?",
-          a: "Standard shipping takes 4 to 7 business days depending on your location. Express shipping option is processed instantly and delivers inside 2 to 3 business days across pan-India pin codes."
+          a: "Standard shipping timelines are as follows: Metro Cities: 7-10 business days; Non-Metro Cities & Tier 2/3 Towns: 10-12 business days; Rest of India: 10-15 business days. Orders are processed from our Surat hub in 1-2 business days."
         },
         {
           q: "How can I track my shipment?",

@@ -41,6 +41,20 @@ function SuccessContent() {
 
         if (response.ok) {
           setOrder(data);
+
+          // ==========================================
+          // META DATASET (PIXEL) PURCHASE TRACKING HERE
+          // ==========================================
+          if (typeof window !== 'undefined' && (window as any).fbq) {
+            (window as any).fbq('track', 'Purchase', {
+              content_ids: data.products?.map((p: any) => p.productId || p.id) || [data._id],
+              content_type: 'product',
+              value: data.payable, // Exact purchase amount charged (e.g., 2499)
+              currency: 'INR'
+            });
+          }
+          // ==========================================
+
         } else {
           setErrorMsg(data.error || "Order not found.");
         }

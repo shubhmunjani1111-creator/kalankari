@@ -55,6 +55,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       newCart.push({ ...item, quantity: qty });
     }
     saveCart(newCart);
+
+    // ==========================================
+    // META DATASET (PIXEL) TRACKING ADDED HERE
+    // ==========================================
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'AddToCart', {
+        content_ids: [item.id],
+        content_name: item.name,
+        content_type: 'product',
+        value: item.price * qty,
+        currency: 'INR'
+      });
+    }
+    // ==========================================
   };
 
   const removeFromCart = (id: string, size: string) => {
